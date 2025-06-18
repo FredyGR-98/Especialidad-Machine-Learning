@@ -1,0 +1,46 @@
+# Importación de librerías a utilizar
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Parámetros de transformación
+theta = np.radians(45)   # Ángulo de rotación en radianes
+scale = 1.5                          # Factor de escalado
+
+# Matriz de transformación compuesta: 
+T = np.array([[scale * np.cos(theta), -scale * np.sin(theta)],
+                        [scale * np.sin(theta),  scale * np.cos(theta)]])
+
+# Conjunto de puntos originales (en columnas)
+puntos = np.array([[1, 2],
+                    [3, 1],
+                   [2, 4],
+                   [4, 3],
+                   [0, 0],
+                   [3, 3]], dtype=float)  # Matriz de dimensión 2x6
+
+# Declaración de variable para hacer la Matriz Transformada
+puntos_t = puntos @ T.T
+
+# Elaboración de grafico de puntos
+plt.figure(figsize=(6, 6))                    # Define el tamaño de la figura
+
+plt.axhline(0, color='gray', lw=0.5)  # Línea horizontal del eje X
+plt.axvline(0, color='gray', lw=0.5)   # Línea vertical del eje Y
+
+# Para dibujar líneas que conectan los puntos originales y transformados
+for p, pt in zip(puntos, puntos_t):
+    plt.plot([p[0], pt[0]], [p[1], pt[1]], 'k--', linewidth=0.8)
+
+# Para dibujar los puntos:
+# Azul Oscuro para puntos originales
+# Gris para los puntos transformados
+plt.scatter(puntos[:, 0], puntos[:, 1], color='darkblue', label='Originales')
+plt.scatter(puntos_t[:, 0], puntos_t[:, 1], color='gray', label='Transformados')
+
+plt.axis('equal')              # Mantiene proporciones reales en X e Y
+plt.legend()                   # Muestra la leyenda de colores
+plt.xlabel("Eje X")            # Etiqueta del eje X
+plt.ylabel("Eje Y")            # Etiqueta del eje Y
+plt.title("Transformación 2D (Escalado + Rotación)")  # Título del gráfico
+plt.grid(True)                 # Muestra cuadrícula
+plt.show()                     # Muestra el gráfico
