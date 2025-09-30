@@ -28,7 +28,6 @@ Thumbs.db
 *.rar
 
 # Modelos entrenados (si quieres mantener solo el código)
-*.joblib
 *.pkl
 *.h5
 
