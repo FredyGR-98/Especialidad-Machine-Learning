@@ -78,13 +78,13 @@ pip install -r requirements.txt
 ```bash
 py train_model.py
 ```
-✔️ Esto generará model.joblib en el directorio raíz.
+- ✔️ Esto generará model.joblib en el directorio raíz.
 
 ### 2. Ejecutar la API Flask
 ```bash
 python app.py
 ```
-✔️ Disponible en http://127.0.0.1:5000
+- ✔️ Disponible en http://127.0.0.1:5000
 
 ---
 
@@ -94,9 +94,9 @@ Antes de interactuar con el frontend, se recomienda **probar la API** para corro
 python test_api.py
 ```
 Este script valida:
-✔️ Respuesta del endpoint raíz / (salud del servicio)
-✔️ Predicción para casos maligno y benigno
-✔️ Manejo de errores con JSON inválido
+- ✔️ Respuesta del endpoint raíz / (salud del servicio)
+- ✔️ Predicción para casos maligno y benigno
+- ✔️ Manejo de errores con JSON inválido
 
 ---
 
