@@ -1,30 +1,29 @@
-# 🎗️ Clasificador de Cáncer de Mama con Flask + Docker  
+# 🎗️ Clasificador de Cáncer de Mama — MLOps con Flask, Docker & GitHub Actions  
 
-Un proyecto de **Machine Learning aplicado a la salud** que permite predecir si un tumor es **benigno** o **maligno**, utilizando un modelo entrenado sobre el dataset de *Breast Cancer* de `scikit-learn`.  
+Un proyecto de **Machine Learning aplicado a la salud** que permite predecir si un tumor es **benigno** o **maligno**, utilizando el dataset *Breast Cancer* de `scikit-learn`.  
 
 Incluye:  
 - 🧠 **Modelo predictivo** entrenado con Random Forest.  
-- 🌐 **API Flask** para exponer el modelo vía REST.  
-- 🎨 **Frontend en HTML** con sliders interactivos y ejemplos precargados.  
-- 🧪 **Pruebas automáticas** para validar los endpoints.  
-- 🐳 **Dockerfile** para garantizar portabilidad en cualquier entorno.  
+- 🌐 **API Flask** que expone el modelo como servicio REST.  
+- 🎨 **Frontend HTML** con sliders interactivos y ejemplos precargados.  
+- 🧪 **Pruebas automáticas** para validar endpoints.  
+- 🐳 **Dockerfile** para portabilidad en cualquier entorno.  
+- ⚙️ **GitHub Actions** para integración continua (CI/CD).  
+- 🚫 **.gitignore** para mantener el repo limpio y ordenado.  
 
 ---
 
 ## 📌 Descripción del Proyecto  
 
-La finalidad de este proyecto es ofrecer una herramienta simple que permita predecir, en base a 30 características clínicas de un tumor, si es **benigno** o **maligno**.  
+La finalidad de este proyecto es ofrecer una herramienta simple que, en base a 30 características clínicas de un tumor, prediga si es **benigno** o **maligno**.  
 
 📊 El dataset utilizado proviene de `scikit-learn` e incluye variables como:  
-- Radio promedio  
-- Textura promedio  
-- Perímetro promedio  
-- Área promedio  
+- Radio, textura, perímetro y área promedio  
 - Suavidad, compacidad y concavidad  
 - Simetría y dimensión fractal  
 - Entre otras mediciones clínicas derivadas  
 
-Estas características se ingresan en el sistema y el modelo devuelve una predicción interpretada como:  
+Predicciones posibles:  
 - ✅ **Benigno**  
 - 🔎 **Maligno**  
 
@@ -33,30 +32,41 @@ Estas características se ingresan en el sistema y el modelo devuelve una predic
 ## 📂 Estructura del Proyecto  
 
 breast-cancer-mlops/
-├── app.py              # API Flask (rutas / y /predict)
-├── train_model.py      # Script de entrenamiento (Random Forest)
-├── test_api.py         # Pruebas automáticas de la API
-├── index.html          # Interfaz web con sliders interactivos
-├── requirements.txt    # Dependencias necesarias
-├── Dockerfile          # Contenerización del proyecto
-├── model.joblib        # Modelo entrenado y serializado
-└── README.md           # Documentación del proyecto
+├── .github/workflows/   # CI/CD con GitHub Actions
+│   └── deploy.yml
+├── templates/           # Frontend HTML
+│   └── index.html
+├── .gitignore           # Exclusión de archivos innecesarios
+├── app.py               # API Flask (rutas / y /predict)
+├── train_model.py       # Entrenamiento del modelo
+├── test_api.py          # Pruebas automáticas de la API
+├── requirements.txt     # Dependencias necesarias
+├── Dockerfile           # Contenerización
+├── model.joblib         # Modelo entrenado y serializado
+└── README.md            # Documentación del proyecto
+
 
 ---
 
 ## ⚡ Instalación y Requisitos  
 
 ### Prerrequisitos  
-- Python 3.8+  
+- Python 3.10+ (probado con 3.13.5)  
 - pip  
 - Docker (opcional, para ejecución contenerizada)  
+- GitHub Actions habilitado (para CI/CD)  
 
 ### 1️⃣ Clonar el repositorio  
 ```bash
 git clone <url-del-repositorio>
 cd breast-cancer-mlops
 ```
-### 2️⃣ Instalar dependencias 
+### 2️⃣ Crear entorno virtual (opcional pero recomendado)
+```bash
+py -m venv mlops-env
+mlops-env\Scripts\activate   # En Windows PowerShell
+```
+### 3️⃣ Instalar dependencias
 ```bash
 pip install -r requirements.txt
 ```
@@ -68,17 +78,18 @@ pip install -r requirements.txt
 ```bash
 py train_model.py
 ```
+✔️ Esto generará model.joblib en el directorio raíz.
+
 ### 2. Ejecutar la API Flask
 ```bash
 python app.py
-
 ```
+✔️ Disponible en http://127.0.0.1:5000
 
 ---
+
 ## 🧪 Pruebas Automáticas  
 Antes de interactuar con el frontend, se recomienda **probar la API** para corroborar que el servicio responde correctamente.  
-
-Ejecutar:  
 ```bash
 python test_api.py
 ```
@@ -90,14 +101,13 @@ Este script valida:
 ---
 
 ## 🎨 Frontend Interactivo (HTML)
-
 Abrir en el navegador:
 http://127.0.0.1:5000/
 
 El sistema despliega una interfaz en HTML con las siguientes características:
-🎚️ Sliders dinámicos para las 30 variables del modelo.
-📌 Ejemplos precargados (Maligno / Benigno) para comprobar rápidamente el sistema.
-✅ Resultados visuales en pantalla con mensajes claros según la predicción.
+- 🎚️ Sliders dinámicos para las 30 variables del modelo.
+- 📌 Ejemplos precargados (Maligno / Benigno) para comprobar rápidamente el sistema.
+- ✅ Resultados visuales en pantalla con mensajes claros según la predicción.
 Esto permite una interacción más dinámica e intuitiva en comparación con las pruebas manuales.
 
 ---
@@ -111,6 +121,23 @@ docker build -t breast-cancer-api-modular:latest .
 ```bash
 docker run -d -p 5000:5000 --name breast-cancer-container breast-cancer-api-modular:latest
 ```
+
+---
+
+## ⚙️ CI/CD con GitHub Actions  
+
+Cada vez que haces *push* al repositorio, se ejecuta automáticamente un flujo de trabajo definido en `.github/workflows/deploy.yml`.  
+
+Este flujo realiza las siguientes tareas:  
+1. 🛠️ **Checkout** del código más reciente.  
+2. 📦 **Instalación** de dependencias desde `requirements.txt`.  
+3. 🧠 **Entrenamiento** del modelo (`train_model.py`).  
+4. ✅ **Ejecución de pruebas** (`test_api.py`).  
+
+Esto asegura:  
+- Que el proyecto siempre se mantenga en buen estado.  
+- Que las pruebas se ejecuten de forma automática.  
+- Que el despliegue sea más fácil y confiable.  
 
 ---
 
