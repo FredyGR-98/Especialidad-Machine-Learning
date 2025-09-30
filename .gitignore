@@ -1,0 +1,39 @@
+# ===========================================================
+# 🚫 .gitignore — Evitar subir archivos innecesarios al repo
+# ===========================================================
+
+# Archivos de entorno virtual
+venv/
+mlops-env/
+.env/
+.venv/
+
+# Archivos temporales de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de pruebas o empaquetados
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
+# Modelos entrenados (si quieres mantener solo el código)
+*.joblib
+*.pkl
+*.h5
+
+# Logs
+*.log
+
+# Configuración de VS Code
+.vscode/
