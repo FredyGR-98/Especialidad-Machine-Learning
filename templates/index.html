@@ -217,11 +217,13 @@ el diagnóstico predicho por el modelo.
                 col.className = "col-md-4 mb-3";
 
                 col.innerHTML = `
-                    <label class="form-label">
-                        ${label}: <span id="val${idx}">${value}</span>
-                        <span class="tooltip-icon" title="${help}">❓</span>
-                    </label>
-                    <input type="range" class="form-range" id="slider${idx}" 
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label class="form-label mb-0">
+                            ${label}: <span id="val${idx}">${value}</span>
+                        </label>
+                        <span class="tooltip-icon ms-2" title="${help}">❓</span>
+                    </div>
+                    <input type="range" class="form-range mt-1" id="slider${idx}" 
                         min="0" max="2000" step="0.01" value="${value}"
                         oninput="document.getElementById('val${idx}').innerText=this.value">
                 `;
