@@ -8,3 +8,4 @@ numpy==2.2.3          # Cálculo numérico
 pandas==2.3.3         # Manejo de DataFrames
 scikit-learn==1.7.2   # Algoritmos de Machine Learning
 joblib==1.4.2         # Serialización del modelo
+matplotlib==3.8.0     # Visualización de datos
