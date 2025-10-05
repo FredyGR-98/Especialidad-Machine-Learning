@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest   # En Actions se usa Ubuntu, no Windows
 
     steps:
     - name: 📥 Checkout del repositorio
@@ -17,7 +17,7 @@ jobs:
     - name: 🐍 Configurar Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.11"
+        python-version: "3.11"   # Versión que usará en GitHub Actions
 
     - name: 📦 Instalar dependencias
       run: |
@@ -25,11 +25,13 @@ jobs:
         pip install -r requirements/api.txt -r requirements/common.txt
 
     - name: 🔧 Entrenar modelo
-      run: python train_model.py
+      run: python breast_cancer_app/train_model.py
+      # 👆 Aquí usamos "python" porque en Linux NO existe "py"
+      # Si alguna vez falla por path, prueba con "python3"
 
     - name: 🚀 Iniciar API en background
       run: |
-        nohup python api.py > server.log 2>&1 &
+        nohup python breast_cancer_app/api/api.py > server.log 2>&1 &
         # Esperar a que levante (hasta ~20s)
         for i in {1..20}; do
           if curl -sSf http://127.0.0.1:5000/ >/dev/null; then
@@ -42,4 +44,5 @@ jobs:
         tail -n 50 server.log || true
 
     - name: 🧪 Ejecutar pruebas automáticas
-      run: python test_api.py
+      run: python -m pytest -v tests/
+      # 👆 Mejor usar pytest, más limpio y estándar que "python test_api.py"
