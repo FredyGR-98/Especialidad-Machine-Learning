@@ -9,6 +9,5 @@
 -r frontend.txt
 
 # Librerías adicionales para análisis y testing
-matplotlib==3.9.2     # Gráficos estáticos
 seaborn==0.13.2       # Visualizaciones estadísticas
 pytest==8.3.3         # Testing automatizado
