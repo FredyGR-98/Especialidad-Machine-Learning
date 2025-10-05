@@ -25,7 +25,7 @@ jobs:
         pip install -r requirements/api.txt -r requirements/common.txt
 
     - name: 🔧 Entrenar modelo
-      run: python breast_cancer_app/train_model.py
+      run: python model/train_model.py
       # 👆 Aquí usamos "python" porque en Linux NO existe "py"
       # Si alguna vez falla por path, prueba con "python3"
 

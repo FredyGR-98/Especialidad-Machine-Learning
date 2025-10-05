@@ -91,8 +91,8 @@ mlops-env\Scripts\activate      # Activa el entorno en Windows PowerShell
 source mlops-env/bin/activate   # Activa el entorno en Linux/Mac
 ```
 ### 3️⃣ Instalar dependencias
-```bash
-Por separado:  
+Por separado:
+```bash  
 - `requirements/common.txt` → Librerías comunes para todo el proyecto (ej. pandas, numpy, joblib).  
 - `requirements/api.txt` → Librerías necesarias para la API Flask.  
 - `requirements/frontend.txt` → Librerías necesarias para el frontend en Streamlit.  
@@ -176,10 +176,8 @@ Accede a los servicios en tu navegador:
 ---
 
 ### ⚙️ CI/CD con GitHub Actions
-```markdown
 Este proyecto incluye un flujo de **integración continua (CI)** definido en  
 `.github/workflows/deploy.yml`.
-```
 
 Cada vez que haces *push* o *pull request* hacia `main`, se ejecuta automáticamente:
 
