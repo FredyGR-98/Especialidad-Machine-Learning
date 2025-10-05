@@ -1,0 +1,15 @@
+# ========================================
+# 📌 api.txt
+# Dependencias específicas para la API Flask
+# Incluye Flask y CORS para comunicación
+# ========================================
+
+flask==3.0.3          # Framework web para la API
+flask-cors==5.0.0     # Habilitar peticiones desde otros orígenes (CORS)
+
+# Servidores WSGI para producción (opcional)
+waitress==3.0.1       # Servidor en Windows/Linux
+gunicorn==23.0.0      # Servidor en Linux
+
+# Importa dependencias comunes
+-r common.txt

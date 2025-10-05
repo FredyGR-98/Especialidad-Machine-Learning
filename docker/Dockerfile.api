@@ -1,0 +1,19 @@
+FROM python:3.10-slim
+
+ENV PYTHONUNBUFFERED=1
+WORKDIR /app
+
+# Copiar toda la carpeta de requirements
+COPY requirements/ ./requirements/
+
+# Instalar dependencias de la API (que usa -r common.txt)
+RUN pip install --no-cache-dir -r requirements/api.txt
+
+# Copiar el resto del código
+COPY api/ ./api
+COPY utils/ ./utils
+COPY artifacts/ ./artifacts
+
+EXPOSE 5000
+
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "api.api:app"]

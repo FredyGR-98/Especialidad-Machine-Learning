@@ -1,0 +1,14 @@
+# ========================================
+# 📌 dev.txt
+# Dependencias completas para entorno de desarrollo local
+# Incluye API, frontend, ML y librerías extra de análisis
+# ========================================
+
+# Instala todo lo de la API y el frontend
+-r api.txt
+-r frontend.txt
+
+# Librerías adicionales para análisis y testing
+matplotlib==3.9.2     # Gráficos estáticos
+seaborn==0.13.2       # Visualizaciones estadísticas
+pytest==8.3.3         # Testing automatizado

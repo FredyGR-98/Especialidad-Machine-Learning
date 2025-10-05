@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    container_name: breast-cancer-api
+    image: breast-cancer-api:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../artifacts:/app/artifacts
+    environment:
+      - DEBUG=false
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: breast-cancer-frontend
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+    environment:
+      - API_URL=http://api:5000
+    volumes:
+      - ../artifacts:/app/artifacts 

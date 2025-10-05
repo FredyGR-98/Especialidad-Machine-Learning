@@ -1,0 +1,19 @@
+FROM python:3.10-slim
+
+ENV PYTHONUNBUFFERED=1
+WORKDIR /app
+
+# Copiar toda la carpeta de requirements
+COPY requirements/ ./requirements/
+
+# Instalar dependencias del frontend (que también llama a common.txt)
+RUN pip install --no-cache-dir -r requirements/frontend.txt
+
+# Copiar el código del frontend y utilidades
+COPY frontend/ ./frontend
+COPY utils/ ./utils
+COPY artifacts/ ./artifacts
+
+EXPOSE 8501
+
+CMD ["streamlit", "run", "frontend/frontend.py", "--server.port=8501", "--server.address=0.0.0.0"]

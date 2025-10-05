@@ -1,6 +1,0 @@
-flask==3.0.3            # Para crear la API web
-scikit-learn==1.7.2     # Para el modelo de machine learning
-joblib==1.4.2           # Para guardar y cargar el modelo
-numpy==2.2.3            # Para operaciones numéricas
-pandas==2.3.3           # Para manipulación de datos   
-requests==2.32.1        # Para hacer solicitudes HTTP
