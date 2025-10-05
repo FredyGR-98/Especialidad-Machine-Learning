@@ -1,6 +1,15 @@
-# 🎗️ Clasificador de Cáncer de Mama — MLOps con Flask, Streamlit & Docker  
+# 🔬 Detector de Cáncer de Mama — MLOps
 
-Un proyecto educativo de **Machine Learning aplicado a la salud** que permite predecir si un tumor es **benigno** o **maligno**, utilizando el dataset *Breast Cancer* de `scikit-learn`.  
+![CI/CD](https://github.com/FredyGR-98/detector-cancer-mama-mlops/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.11-blue.svg)
+![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+
+---
+
+🚀 Proyecto de **Machine Learning + MLOps** que entrena un modelo de clasificación de cáncer de mama y lo expone mediante una **API Flask** y un **frontend en Streamlit**, con integración de **Docker** y **CI/CD en GitHub Actions**.
+
+> ⚠️ Este proyecto es educativo y **no constituye diagnóstico médico**.
 
 Incluye:  
 - 🧠 **Random Forest** entrenado en Python.  
