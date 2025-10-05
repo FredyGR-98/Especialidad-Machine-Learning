@@ -96,13 +96,12 @@ Por separado:
 - `requirements/common.txt` → Librerías comunes para todo el proyecto (ej. pandas, numpy, joblib).  
 - `requirements/api.txt` → Librerías necesarias para la API Flask.  
 - `requirements/frontend.txt` → Librerías necesarias para el frontend en Streamlit.  
-
+```
 Ejecutar:  
 ```bash
 pip install -r requirements/common.txt
 pip install -r requirements/api.txt
 pip install -r requirements/frontend.txt
-
 ```
 ## Opción rápida (instala todas las dependencias de una sola vez con dev.txt):
 ```bash
@@ -144,17 +143,6 @@ Endpoints principales:
 - /examples → Casos de ejemplo.
 - /predict → Predicción individual (POST JSON).
 - /visualizations/<archivo> → Acceder a gráficas generadas.
----
-
-## 🧪 Pruebas Automáticas  
-Antes de interactuar con el frontend, se recomienda **probar la API** para corroborar que el servicio responde correctamente.  
-```bash
-python test_api.py
-```
-Este script valida:
-- ✔️ Respuesta del endpoint raíz / (salud del servicio)
-- ✔️ Predicción para casos maligno y benigno
-- ✔️ Manejo de errores con JSON inválido
 
 ---
 
@@ -189,10 +177,9 @@ Accede a los servicios en tu navegador:
 
 ### ⚙️ CI/CD con GitHub Actions
 ```markdown
-## ⚙️ CI/CD con GitHub Actions
-
 Este proyecto incluye un flujo de **integración continua (CI)** definido en  
 `.github/workflows/deploy.yml`.
+```
 
 Cada vez que haces *push* o *pull request* hacia `main`, se ejecuta automáticamente:
 
