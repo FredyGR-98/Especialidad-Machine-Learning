@@ -31,7 +31,7 @@ jobs:
 
     - name: 🚀 Iniciar API en background
       run: |
-        nohup python breast_cancer_app/api/api.py > server.log 2>&1 &
+        nohup python api/api.py > server.log 2>&1 &
         # Esperar a que levante (hasta ~20s)
         for i in {1..20}; do
           if curl -sSf http://127.0.0.1:5000/ >/dev/null; then
