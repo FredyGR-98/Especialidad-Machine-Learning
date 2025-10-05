@@ -94,10 +94,26 @@ def predict():
         if not data:
             return jsonify({"error": "No se enviaron datos en el JSON"}), 400
 
+        # 🚨 Nueva validación: asegurar que sea un dict y que tenga al menos una feature válida
+        if not isinstance(data, dict):
+            return jsonify({"error": "El formato debe ser un diccionario JSON"}), 400
+
+        valid_features = set(feature_info["feature_names"])
+        provided_features = set(data.keys())
+
+        if not provided_features.issubset(valid_features):
+            return jsonify({
+                "error": "Se enviaron características inválidas",
+                "invalid_features": list(provided_features - valid_features)
+            }), 400
+
+        if len(provided_features) == 0:
+            return jsonify({"error": "No se enviaron características reconocidas"}), 400
+
+        # Convertir a DataFrame y asegurar todas las columnas
         df = pd.DataFrame([data])
         df = df.reindex(columns=feature_info["feature_names"], fill_value=0)
 
-        # Log resumido
         logger.debug(f"/predict recibido con {len(data)} features")
 
         prediction = model.predict(df)[0]
@@ -107,11 +123,10 @@ def predict():
             "input": data,
             "prediction": int(prediction),
             "probability": proba
-        })
+        }), 200
     except Exception as e:
         logger.error(f"Error en /predict: {str(e)}")
         return jsonify({"error": "Error en la predicción. Revisa los datos enviados."}), 400
-
 
 @app.route("/predict/batch", methods=["POST"])
 def predict_batch():
