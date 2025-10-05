@@ -4,7 +4,7 @@
 # Usadas tanto en entrenamiento, API y frontend
 # ========================================
 
-numpy==2.2.3          # Cálculo numérico
+numpy==1.26.4         # Cálculo numérico (compatible con pandas, sklearn y matplotlib)
 pandas==2.3.3         # Manejo de DataFrames
 scikit-learn==1.7.2   # Algoritmos de Machine Learning
 joblib==1.4.2         # Serialización del modelo
