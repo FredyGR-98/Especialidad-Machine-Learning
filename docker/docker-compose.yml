@@ -11,6 +11,7 @@ services:
       - "5000:5000"
     volumes:
       - ../artifacts:/app/artifacts
+      - ../database:/app/database
     environment:
       - DEBUG=false
 
@@ -26,4 +27,4 @@ services:
     environment:
       - API_URL=http://api:5000
     volumes:
-      - ../artifacts:/app/artifacts 
+      - ../artifacts:/app/artifacts

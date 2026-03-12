@@ -2,13 +2,13 @@ name: CI - Breast Cancer API
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest   # En Actions se usa Ubuntu, no Windows
+    runs-on: ubuntu-latest
 
     steps:
     - name: 📥 Checkout del repositorio
@@ -17,7 +17,7 @@ jobs:
     - name: 🐍 Configurar Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.11"   # Versión que usará en GitHub Actions
+        python-version: "3.11"
 
     - name: 📦 Instalar dependencias
       run: |
@@ -26,13 +26,15 @@ jobs:
 
     - name: 🔧 Entrenar modelo
       run: python model/train_model.py
-      # 👆 Aquí usamos "python" porque en Linux NO existe "py"
-      # Si alguna vez falla por path, prueba con "python3"
+
+    - name: 🗄 Inicializar base de datos
+      run: python scripts/init_db.py
 
     - name: 🚀 Iniciar API en background
+      env:
+        PYTHONPATH: ${{ github.workspace }}
       run: |
         nohup python api/api.py > server.log 2>&1 &
-        # Esperar a que levante (hasta ~20s)
         for i in {1..20}; do
           if curl -sSf http://127.0.0.1:5000/ >/dev/null; then
             echo "API arriba ✅"
@@ -40,9 +42,8 @@ jobs:
           fi
           sleep 1
         done
-        echo "---- server.log (últimas líneas) ----"
+        echo "---- server.log ----"
         tail -n 50 server.log || true
 
     - name: 🧪 Ejecutar pruebas automáticas
       run: python -m pytest -v tests/
-      # 👆 Mejor usar pytest, más limpio y estándar que "python test_api.py"

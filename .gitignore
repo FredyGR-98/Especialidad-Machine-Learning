@@ -2,37 +2,87 @@
 # 🚫 .gitignore — Evitar subir archivos innecesarios al repo
 # ===========================================================
 
-# Archivos de entorno virtual
+# =============================
+# ENTORNOS VIRTUALES
+# =============================
 venv/
 mlops-env/
 .env/
 .venv/
+env/
 
-# Archivos temporales de Python
+# =============================
+# PYTHON CACHE
+# =============================
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.pytest_cache/
 
-# Archivos de Jupyter Notebook checkpoints
+# =============================
+# JUPYTER
+# =============================
 .ipynb_checkpoints/
 
-# Archivos de sistema
+# =============================
+# ARCHIVOS DE SISTEMA
+# =============================
 .DS_Store
 Thumbs.db
 
-# Archivos de pruebas o empaquetados
+# =============================
+# ARCHIVOS COMPRIMIDOS
+# =============================
 *.zip
 *.tar
 *.tar.gz
 *.rar
 
-# Modelos entrenados (si quieres mantener solo el código)
+# =============================
+# MODELOS ENTRENADOS
+# (solo si no quieres subirlos)
+# =============================
 *.pkl
 *.h5
+*.joblib
 
-# Logs
+# =============================
+# LOGS
+# =============================
 *.log
 
-# Configuración de VS Code
+# =============================
+# CONFIGURACIÓN DE EDITORES
+# =============================
 .vscode/
+.idea/
+
+# =============================
+# DOCKER
+# =============================
+docker/*.log
+
+# =============================
+# TESTS / COVERAGE
+# =============================
+.coverage
+htmlcov/
+
+# =============================
+# DATASETS PESADOS
+# (si agregas en el futuro)
+# =============================
+data/
+datasets/
+
+# =============================
+# STREAMLIT CACHE
+# =============================
+.streamlit/
+
+# =============================
+# MAC / WINDOWS TEMP
+# =============================
+*.tmp
+*.bak

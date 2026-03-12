@@ -1,19 +1,24 @@
-FROM python:3.10-slim
+# Imagen base de Python
+FROM python:3.11-slim
 
+# Variables recomendadas
+ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+
+# Directorio de trabajo
 WORKDIR /app
 
-# Copiar toda la carpeta de requirements
-COPY requirements/ ./requirements/
+# Copiar dependencias
+COPY requirements/ ./requirements
 
-# Instalar dependencias del frontend (que también llama a common.txt)
+# Instalar dependencias del frontend
 RUN pip install --no-cache-dir -r requirements/frontend.txt
 
-# Copiar el código del frontend y utilidades
-COPY frontend/ ./frontend
-COPY utils/ ./utils
-COPY artifacts/ ./artifacts
+# Copiar todo el proyecto
+COPY . .
 
+# Puerto de Streamlit
 EXPOSE 8501
 
-CMD ["streamlit", "run", "frontend/frontend.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Ejecutar frontend
+CMD ["streamlit", "run", "frontend/app.py", "--server.address=0.0.0.0", "--server.port=8501"]
