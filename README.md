@@ -4,8 +4,13 @@
 ![Python](https://img.shields.io/badge/python-3.11-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-model-orange.svg)
+![Flask](https://img.shields.io/badge/flask-api-black.svg)
+![Streamlit](https://img.shields.io/badge/streamlit-frontend-red.svg)
+![SQLite](https://img.shields.io/badge/sqlite-local_db-003B57.svg)
+![Power BI](https://img.shields.io/badge/power_bi-dashboard-F2C811.svg)
 
-Plataforma demostrativa orientada a la prediccion de cancer de mama a partir de variables clinicas, con foco en determinar si un tumor presenta un comportamiento `Benigno` o `Maligno`. El proyecto integra entrenamiento de modelo, API Flask, interfaz en Streamlit, persistencia en SQLite y visualizacion ejecutiva en Power BI.
+Plataforma demostrativa orientada a la prediccion de cancer de mama a partir de variables clinicas, con foco en estimar si un tumor presenta un comportamiento `Benigno` o `Maligno`. El proyecto integra entrenamiento de modelo, API Flask, interfaz en Streamlit, persistencia en SQLite y visualizacion ejecutiva en Power BI.
 
 Este repositorio fue reorganizado para presentarse como una pieza de portafolio tecnico en analisis de datos, machine learning aplicado y MLOps. No corresponde a un sistema medico validado ni debe utilizarse para diagnostico clinico real.
 
@@ -29,48 +34,63 @@ En conjunto, el caso permite mostrar una cadena completa de trabajo entre infere
 | Un modelo sin seguimiento historico aporta poco a nivel ejecutivo | Se conecto Power BI a la base local por ODBC para analizar los registros |
 | Un proyecto academico suele verse desconectado de una capa de consumo | Se integraron frontend, API, base de datos y dashboard en un mismo flujo |
 
-## Stack tecnico
-
-- Python 3.11
-- scikit-learn
-- pandas
-- Flask
-- Streamlit
-- SQLite
-- Power BI
-- Docker
-
 ## Resultados del modelo
 
-Metricas generadas a partir del entrenamiento actual:
-
-- Accuracy: `94.74%`
-- F1-score: `95.83%`
-- ROC AUC: `0.9937`
-
-Modelo actual:
-
-- algoritmo: `Random Forest Classifier`
-- tipo de problema: clasificacion binaria
-- clases estimadas: `Malignant` y `Benign`
-- variables de entrada: `30`
+| Indicador | Valor |
+| --- | --- |
+| Accuracy | `94.74%` |
+| F1-score | `95.83%` |
+| ROC AUC | `0.9937` |
+| Algoritmo | `Random Forest Classifier` |
+| Tipo de problema | `Clasificacion binaria` |
+| Clases estimadas | `Malignant` / `Benign` |
+| Variables de entrada | `30` |
 
 ## Estructura del repositorio
 
 ```text
-breast-cancer-mlops/
-├── .github/                  # workflow de integracion continua
-├── api/                      # API Flask para prediccion y persistencia
-├── artifacts/                # modelo entrenado, metricas y visualizaciones
-├── database/                 # base SQLite, esquema y gestor de acceso
-├── docker/                   # archivos para ejecucion contenerizada
-├── frontend/                 # aplicacion Streamlit y vistas del sistema
-├── model/                    # script de entrenamiento del modelo
-├── powerbi/                  # dashboard PBIX y notas de rediseño
-├── requirements/             # dependencias separadas por capa
-├── scripts/                  # inicializacion de base y carga sintetica
-├── tests/                    # pruebas automatizadas principales
-└── README.md                 # documentacion del proyecto
+📦 breast-cancer-mlops
+├── 📁 .github
+│   └── 📁 workflows
+│       └── deploy.yml                    # Pipeline de validacion
+├── 📁 api
+│   └── api.py                            # API Flask para prediccion y guardado
+├── 📁 artifacts
+│   ├── 📁 info
+│   │   ├── example_cases.json            # Casos de ejemplo
+│   │   ├── feature_info.json             # Metadata del modelo
+│   │   └── model_metrics.json            # Metricas exportadas
+│   ├── 📁 model
+│   │   └── model.pkl                     # Modelo serializado
+│   └── 📁 visualizations
+│       ├── confusion_matrix.png          # Matriz de confusion
+│       ├── correlation_matrix.png        # Correlaciones del entrenamiento
+│       ├── feature_importance.png        # Variables mas influyentes
+│       └── roc_curve.png                 # Curva ROC
+├── 📁 database
+│   ├── breast_cancer_clinical.db         # Base SQLite principal
+│   ├── db_manager.py                     # Acceso a datos
+│   ├── schema.sql                        # Estructura inicial
+│   └── seed_data.sql                     # Datos base
+├── 📁 docker                             # Archivos de contenedorizacion
+├── 📁 frontend
+│   ├── 📁 components                     # Componentes visuales reutilizables
+│   ├── 📁 services                       # Consumo de API
+│   ├── 📁 utils                          # Helpers, tema y configuracion
+│   ├── 📁 views                          # Vistas principales del sistema
+│   └── app.py                            # Punto de entrada de Streamlit
+├── 📁 model
+│   └── train_model.py                    # Entrenamiento del clasificador
+├── 📁 powerbi
+│   ├── breast_cancer_dashboard.pbix      # Dashboard local en Power BI
+│   └── dashboard_redesign_plan.md        # Notas de rediseño
+├── 📁 requirements                       # Dependencias por entorno
+├── 📁 scripts
+│   ├── init_db.py                        # Inicializacion de la base
+│   └── seed_demo_patients.py             # Carga de pacientes sinteticos
+├── 📁 tests
+│   └── test_api.py                       # Validaciones principales
+└── README.md                             # Documentacion del proyecto
 ```
 
 ## Experiencia del proyecto
@@ -85,8 +105,8 @@ La interfaz Streamlit fue reorganizada para presentar el proyecto como una soluc
 - formulario de nueva evaluacion y prediccion
 - persistencia del resultado en SQLite
 
-Nota:
-El predictor se apoya en el dataset `Wisconsin Breast Cancer Diagnostic` como base para el entrenamiento del modelo y en registros sinteticos almacenados en SQLite para simular un historial clinico reutilizable.
+> Nota
+> El predictor se apoya en el dataset `Wisconsin Breast Cancer Diagnostic` como base de entrenamiento y en registros sinteticos persistidos en `SQLite` para simular un historial clinico reutilizable.
 
 Espacio para video demostrativo del predictor:
 
@@ -117,7 +137,7 @@ py -m venv .venv
 pip install -r requirements/dev.txt
 ```
 
-En GitHub Markdown no existen tabs nativos como en una documentacion web, pero si puedes simular una separacion limpia usando bloques desplegables. Por eso el flujo se divide asi:
+Para mantener una lectura mas ordenada, los pasos se separan entre el flujo del predictor local y la conexion del dashboard.
 
 <details>
 <summary><strong>Flujo 1: predictor local</strong></summary>
@@ -205,14 +225,7 @@ Con esto el dashboard deberia leer los nuevos registros guardados por la app y p
 
 ## Endpoints principales
 
-- `GET /health`
-- `GET /model/info`
-- `GET /examples`
-- `POST /predict`
-- `POST /predict-and-save`
-- `POST /predict/batch`
-- `POST /login`
-- `GET /patients`
+`GET /health` `GET /model/info` `GET /examples` `POST /predict` `POST /predict-and-save` `POST /predict/batch` `POST /login` `GET /patients`
 
 ## Autor
 
