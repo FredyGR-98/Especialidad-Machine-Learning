@@ -110,7 +110,7 @@ La interfaz Streamlit fue reorganizada para presentar el proyecto como una soluc
 
 Video demostrativo del predictor:
 
-- [Ver demostracion del predictor clinico de cancer de mama](https://youtu.be/kQWZsZmppgw)
+[![Ver demo del predictor clinico](https://img.youtube.com/vi/kQWZsZmppgw/hqdefault.jpg)](https://youtu.be/kQWZsZmppgw)
 
 ### Dashboard clinico en Power BI
 
@@ -125,7 +125,7 @@ El dashboard consume la misma base SQLite que alimenta la aplicacion y se conect
 
 Video demostrativo del dashboard:
 
-- [Ver demostracion del dashboard clinico en Power BI](https://youtu.be/xWs-Tn3vvto)
+[![Ver demo del dashboard clinico](https://img.youtube.com/vi/xWs-Tn3vvto/hqdefault.jpg)](https://youtu.be/xWs-Tn3vvto)
 
 ## Instalacion local
 
