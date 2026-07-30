@@ -8,7 +8,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from html import escape
+import os
 from pathlib import Path
+import subprocess
 
 import pandas as pd
 import plotly.express as px
@@ -60,13 +62,7 @@ class ClinicalDashboardView:
             unsafe_allow_html=True,
         )
 
-        df = self._load_dashboard_data()
-
-        if df.empty:
-            st.info("No hay datos clínicos disponibles para construir la vista.")
-            return
-
-        df = self._prepare_dataframe(df)
+        df = self._get_cached_dashboard_data()
 
         if df.empty:
             st.warning("No se encontraron registros válidos para renderizar la vista.")
@@ -124,7 +120,10 @@ class ClinicalDashboardView:
                 "La suavidad muestra qué tan regular es la superficie observada. Cambios sostenidos entre grupos pueden ayudar a separar casos benignos y malignos."
             )
 
-        st.markdown("### Dashboard ejecutivo")
+        st.markdown(
+            f"<div class='dashboard-section-title'>Dashboard ejecutivo</div>",
+            unsafe_allow_html=True,
+        )
         st.caption(
             "Para visualizar mejor los datos, puedes revisar el siguiente dashboard interactivo."
         )
@@ -133,6 +132,29 @@ class ClinicalDashboardView:
     # =====================================================
     # CARGA Y PREPARACIÓN DE DATOS
     # =====================================================
+
+    def _get_cached_dashboard_data(self) -> pd.DataFrame:
+        refresh_nonce = st.session_state.get("records_refresh_nonce", 0)
+        cached_nonce = st.session_state.get("clinical_dashboard_cache_nonce")
+        cached_df = st.session_state.get("clinical_dashboard_cache_df")
+
+        if cached_df is not None and cached_nonce == refresh_nonce:
+            return cached_df.copy()
+
+        raw_df = self._load_dashboard_data()
+
+        if raw_df.empty:
+            prepared_df = pd.DataFrame()
+        else:
+            prepared_df = self._prepare_dataframe(raw_df)
+
+        st.session_state["clinical_dashboard_cache_nonce"] = refresh_nonce
+        st.session_state["clinical_dashboard_cache_df"] = prepared_df.copy()
+        return prepared_df
+
+    def _invalidate_dashboard_cache(self) -> None:
+        st.session_state["clinical_dashboard_cache_nonce"] = None
+        st.session_state["clinical_dashboard_cache_df"] = None
 
     def _load_dashboard_data(self) -> pd.DataFrame:
         """
@@ -367,25 +389,32 @@ class ClinicalDashboardView:
     # =====================================================
 
     def _render_power_bi_link(self) -> None:
-        power_bi_url = self.power_bi_path.resolve().as_uri()
-        power_bi_label = escape(str(self.power_bi_path))
-
         st.markdown(
-            f"""
+            """
             <div class="powerbi-box">
-                Este dashboard permite explorar los registros con una vista más ejecutiva,
-                interactiva y orientada a segmentaciones, tendencias y seguimiento clínico.
-                <br><br>
-                <a href="{power_bi_url}" target="_blank" class="powerbi-link">
-                    Visualizar dashboard ejecutivo
-                </a>
-                <div style="margin-top:0.85rem; color:{self.colors.text}; font-size:0.9rem;">
-                    Archivo local asociado: {power_bi_label}
-                </div>
+                Para visualizar mejor los datos, puedes revisar el dashboard interactivo asociado a esta base local.
             </div>
             """,
             unsafe_allow_html=True,
         )
+
+        if st.button(
+            "Abrir dashboard ejecutivo",
+            key="open_power_bi_dashboard_button",
+            type="primary",
+            use_container_width=True,
+        ):
+            self._open_power_bi_dashboard()
+
+    def _open_power_bi_dashboard(self) -> None:
+        if not self.power_bi_path.exists():
+            st.error("No se encontró el archivo local del dashboard de Power BI.")
+            return
+
+        try:
+            os.startfile(str(self.power_bi_path))
+        except Exception as exc:
+            st.error(f"No fue posible abrir el dashboard de Power BI: {exc}")
 
     # =====================================================
     # ESTILO
@@ -438,6 +467,13 @@ class ClinicalDashboardView:
                 margin-bottom: 1rem;
                 color: {self.colors.text};
                 line-height: 1.6;
+            }}
+
+            .dashboard-section-title {{
+                color: {self.colors.primary};
+                font-size: 1.35rem;
+                font-weight: 800;
+                margin: 1.15rem 0 0.2rem 0;
             }}
 
             .section-note {{
@@ -508,16 +544,19 @@ class ClinicalDashboardView:
                 color: {self.colors.text};
                 line-height: 1.6;
                 margin-top: 0.5rem;
+                margin-bottom: 0.75rem;
             }}
 
-            .powerbi-link {{
-                display: inline-block;
-                background: {self.colors.primary};
-                color: white !important;
-                text-decoration: none;
-                padding: 0.65rem 1rem;
-                border-radius: 10px;
-                font-weight: 700;
+            div[data-testid="stButton"] > button[kind="primary"] {{
+                background: {self.colors.primary} !important;
+                border: 1px solid {self.colors.primary} !important;
+                color: #ffffff !important;
+            }}
+
+            div[data-testid="stButton"] > button[kind="primary"]:hover {{
+                background: {self.colors.primary_dark} !important;
+                border: 1px solid {self.colors.primary_dark} !important;
+                color: #ffffff !important;
             }}
             </style>
             """,

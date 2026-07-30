@@ -198,9 +198,18 @@ def generate_measurement(profile: str) -> dict[str, float]:
 
 def generate_patient_name(index: int) -> str:
     first_name = FIRST_NAMES[index % len(FIRST_NAMES)]
-    last_name = LAST_NAMES[(index * 3) % len(LAST_NAMES)]
-    second_last_name = LAST_NAMES[(index * 5 + 2) % len(LAST_NAMES)]
-    return f"{first_name} {last_name} {second_last_name}"
+    name_cycle = index // len(FIRST_NAMES)
+    extra_first_name = FIRST_NAMES[(name_cycle * 5 + index * 7 + 3) % len(FIRST_NAMES)]
+    last_name = LAST_NAMES[(index * 3 + name_cycle) % len(LAST_NAMES)]
+    second_last_name = LAST_NAMES[(index * 5 + 2 + name_cycle * 3) % len(LAST_NAMES)]
+
+    if extra_first_name == first_name:
+        extra_first_name = FIRST_NAMES[(index * 11 + 1) % len(FIRST_NAMES)]
+
+    if name_cycle == 0:
+        return f"{first_name} {last_name} {second_last_name}"
+
+    return f"{first_name} {extra_first_name} {last_name} {second_last_name}"
 
 
 def generate_rut(index: int) -> str:

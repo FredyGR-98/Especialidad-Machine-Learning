@@ -435,6 +435,16 @@ class PatientsView:
             .measure-col-reading {
                 width: 55%;
             }
+
+            div[data-testid="stDataEditor"] [role="columnheader"] {
+                background: linear-gradient(180deg, #d81b60 0%, #e75480 100%);
+                color: #ffffff !important;
+                font-weight: 800 !important;
+            }
+
+            div[data-testid="stDataEditor"] [role="gridcell"] {
+                background: #fffafb;
+            }
             </style>
             """
         )
@@ -587,45 +597,167 @@ class PatientsView:
             st.warning("No se encontraron pacientes cargados en la base actual.")
             return None
 
-        search_term = st.text_input(
-            "Buscar paciente por nombre o RUT",
-            placeholder="Ejemplo: Maria Gonzalez o 12.345.678-9",
-        ).strip().lower()
+        filter_col1, filter_col2, filter_col3 = st.columns(3)
 
-        filtered_patients = [
-            patient for patient in patients
-            if not search_term
-            or search_term in str(patient.get("full_name", "")).lower()
-            or search_term in str(patient.get("rut", "")).lower()
-        ]
+        with filter_col1:
+            name_filter = st.text_input(
+                "Filtrar por nombre",
+                placeholder="Ejemplo: Maria Gonzalez",
+                key="patients_filter_name",
+            ).strip().lower()
+
+        with filter_col2:
+            rut_filter = st.text_input(
+                "Filtrar por RUT",
+                placeholder="Ejemplo: 12.345.678-9",
+                key="patients_filter_rut",
+            ).strip().lower()
+
+        with filter_col3:
+            ages = [
+                int(patient.get("age", 0) or 0)
+                for patient in patients
+                if patient.get("age") is not None
+            ]
+            min_age = min(ages) if ages else 18
+            max_age = max(ages) if ages else 80
+            age_filter = st.slider(
+                "Filtrar por rango etario",
+                min_value=min_age,
+                max_value=max_age,
+                value=(min_age, max_age),
+                key="patients_filter_age_range",
+            )
+
+        filtered_patients = self._filter_patients(
+            patients=patients,
+            name_filter=name_filter,
+            rut_filter=rut_filter,
+            age_filter=age_filter,
+        )
 
         if not filtered_patients:
             st.info("No se encontraron coincidencias con la búsqueda actual.")
             return None
 
-        patient_options = {}
-        option_labels = []
         preferred_patient_id = st.session_state.get("patients_selected_patient_id")
-        selected_index = 0
-
-        for patient in filtered_patients:
-            label = self._format_patient_option(patient)
-            patient_options[label] = patient
-            option_labels.append(label)
-
-            if patient.get("patient_id") == preferred_patient_id:
-                selected_index = len(option_labels) - 1
-
-        selected_label = st.selectbox(
-            "Seleccionar paciente",
-            options=option_labels,
-            index=selected_index,
-            key="patients_selector",
+        selector_df = self._build_patient_selector_dataframe(
+            patients=filtered_patients,
+            preferred_patient_id=preferred_patient_id,
         )
 
-        selected_patient = patient_options[selected_label]
+        edited_selector_df = st.data_editor(
+            selector_df,
+            hide_index=True,
+            use_container_width=True,
+            key="patients_selector_table",
+            disabled=[
+                "Paciente",
+                "RUT",
+                "Edad",
+                "Sexo",
+                "Evaluaciones",
+                "Ultimo control",
+                "patient_id",
+            ],
+            column_config={
+                "Seleccionar": st.column_config.CheckboxColumn(
+                    "Seleccionar",
+                    help="Marca el caso que quieres revisar o actualizar.",
+                ),
+                "Paciente": st.column_config.TextColumn("Paciente", width="large"),
+                "RUT": st.column_config.TextColumn("RUT", width="medium"),
+                "Edad": st.column_config.NumberColumn("Edad", format="%d"),
+                "Sexo": st.column_config.TextColumn("Sexo", width="small"),
+                "Evaluaciones": st.column_config.NumberColumn("Evaluaciones", format="%d"),
+                "Ultimo control": st.column_config.TextColumn("Ultimo control", width="medium"),
+                "patient_id": None,
+            },
+        )
+
+        selected_rows = edited_selector_df[edited_selector_df["Seleccionar"] == True]  # noqa: E712
+
+        if selected_rows.empty:
+            st.caption("Selecciona un paciente en la tabla para revisar su historial o registrar una nueva evaluacion.")
+            return None
+
+        if len(selected_rows) > 1:
+            st.warning("Selecciona solo un paciente a la vez para continuar con el analisis.")
+            return None
+
+        selected_patient_id = int(selected_rows.iloc[0]["patient_id"])
+        selected_patient = next(
+            (
+                patient
+                for patient in filtered_patients
+                if int(patient.get("patient_id", -1)) == selected_patient_id
+            ),
+            None,
+        )
+
+        if not selected_patient:
+            st.error("No fue posible recuperar el caso seleccionado desde la tabla filtrada.")
+            return None
+
         st.session_state["patients_selected_patient_id"] = selected_patient.get("patient_id")
         return selected_patient
+
+    def _filter_patients(
+        self,
+        patients: list[dict],
+        name_filter: str,
+        rut_filter: str,
+        age_filter: tuple[int, int] | None,
+    ) -> list[dict]:
+        filtered_patients = []
+
+        for patient in patients:
+            full_name = str(patient.get("full_name", "")).lower()
+            rut = str(patient.get("rut", "")).lower()
+            age = patient.get("age")
+
+            if name_filter and name_filter not in full_name:
+                continue
+
+            if rut_filter and rut_filter not in rut:
+                continue
+
+            if age_filter is not None:
+                try:
+                    current_age = int(age)
+                    age_min, age_max = age_filter
+                    if current_age < age_min or current_age > age_max:
+                        continue
+                except (TypeError, ValueError):
+                    continue
+
+            filtered_patients.append(patient)
+
+        return filtered_patients
+
+    def _build_patient_selector_dataframe(
+        self,
+        patients: list[dict],
+        preferred_patient_id: int | None,
+    ) -> pd.DataFrame:
+        rows = []
+
+        for patient in patients:
+            patient_id = int(patient.get("patient_id", 0) or 0)
+            rows.append(
+                {
+                    "Seleccionar": patient_id == preferred_patient_id,
+                    "Paciente": str(patient.get("full_name", "Sin nombre")),
+                    "RUT": str(patient.get("rut", "Sin RUT")),
+                    "Edad": int(patient.get("age", 0) or 0),
+                    "Sexo": str(patient.get("sex", "N/D")),
+                    "Evaluaciones": int(patient.get("total_measurements", 0) or 0),
+                    "Ultimo control": str(patient.get("last_evaluation_date") or "Sin registros"),
+                    "patient_id": patient_id,
+                }
+            )
+
+        return pd.DataFrame(rows)
 
     def _render_patient_summary_card(self, patient: dict) -> None:
         self._render_html(
