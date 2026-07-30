@@ -108,9 +108,9 @@ La interfaz Streamlit fue reorganizada para presentar el proyecto como una soluc
 > Nota
 > El predictor se apoya en el dataset `Wisconsin Breast Cancer Diagnostic` como base de entrenamiento y en registros sinteticos persistidos en `SQLite` para simular un historial clinico reutilizable.
 
-Espacio para video demostrativo del predictor:
+Video demostrativo del predictor:
 
-`[Agregar video o GIF del flujo de prediccion en Streamlit]`
+- [Ver demostracion del predictor clinico de cancer de mama](https://youtu.be/kQWZsZmppgw)
 
 ### Dashboard clinico en Power BI
 
@@ -123,9 +123,9 @@ El dashboard consume la misma base SQLite que alimenta la aplicacion y se conect
 - concentracion de evaluaciones por grupo etario
 - mapa de calor por edad y clasificacion
 
-Espacio para video demostrativo del dashboard:
+Video demostrativo del dashboard:
 
-`[Agregar video o GIF de navegacion del dashboard en Power BI]`
+- [Ver demostracion del dashboard clinico en Power BI](https://youtu.be/xWs-Tn3vvto)
 
 ## Instalacion local
 
