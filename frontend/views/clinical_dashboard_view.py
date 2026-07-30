@@ -1,16 +1,20 @@
 """
-Vista de dashboard clínico.
-Replica del dashboard diseñado en Power BI, renderizada en Streamlit.
+Vista de análisis exploratorio clínico.
+Presenta una lectura descriptiva de los registros clínicos almacenados
+en la base de datos, complementando el dashboard ejecutivo en Power BI.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from html import escape
+from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+
+from utils.theme import APP_THEME
 
 
 @dataclass
@@ -18,71 +22,62 @@ class DashboardColors:
     """
     Paleta visual inspirada en la temática de cáncer de mama.
     """
-    primary: str = "#C2185B"
-    primary_dark: str = "#880E4F"
-    benign: str = "#E9A3C9"
-    malignant: str = "#E75480"
-    soft_bg: str = "#FCE4EC"
-    border: str = "#F8BBD0"
-    text: str = "#4A4A4A"
+    primary: str = APP_THEME["primary"]
+    primary_dark: str = APP_THEME["primary_dark"]
+    benign: str = APP_THEME["class_benign"]
+    malignant: str = APP_THEME["class_malignant"]
+    soft_bg: str = APP_THEME["surface_alt"]
+    border: str = APP_THEME["border"]
+    text: str = APP_THEME["text"]
 
 
 class ClinicalDashboardView:
     """
-    Renderiza la sección de dashboard clínico.
+    Renderiza la sección de análisis exploratorio clínico.
     """
 
     def __init__(self, api_client) -> None:
-        """
-        Inicializa la vista de dashboard clínico.
-
-        Args:
-            api_client: Cliente base para comunicación con la API.
-        """
         self.api_client = api_client
         self.colors = DashboardColors()
+        self.base_dir = Path(__file__).resolve().parents[2]
+        self.power_bi_path = self.base_dir / "powerbi" / "breast_cancer_dashboard.pbix"
 
     def render(self) -> None:
         """
         Renderiza el contenido visual de la vista.
         """
+        self._inject_css()
         st.title("Dashboard Clínico")
+
+        st.markdown(
+            """
+            <div class="info-banner">
+                Esta vista quedó enfocada en una lectura clínica rápida. Aquí solo se
+                comparan variables clave entre casos benignos y malignos mediante boxplots,
+                mientras que el análisis ejecutivo completo se consulta en el dashboard externo.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         df = self._load_dashboard_data()
 
         if df.empty:
-            st.info("No hay datos clínicos disponibles para construir el dashboard.")
+            st.info("No hay datos clínicos disponibles para construir la vista.")
             return
 
         df = self._prepare_dataframe(df)
 
         if df.empty:
-            st.warning("No se encontraron registros válidos para renderizar el dashboard.")
-            return
-
-        self._inject_css()
-
-        years = sorted(df["year"].dropna().unique().tolist())
-
-        top_filter, top_kpi1, top_kpi2, top_kpi3, top_kpi4 = st.columns(
-            [0.95, 1.35, 1.35, 1.35, 1.45],
-            gap="small"
-        )
-
-        with top_filter:
-            selected_years = self._render_year_filter(years)
-
-        if selected_years:
-            df = df[df["year"].isin(selected_years)].copy()
-
-        if df.empty:
-            st.info("No hay registros para el año seleccionado.")
+            st.warning("No se encontraron registros válidos para renderizar la vista.")
             return
 
         total_patients = int(df["patient_id"].nunique())
         total_evaluations = int(len(df))
         malignant_cases = int((df["predicted_class"] == "Malignant").sum())
         pct_malignant = (malignant_cases / total_evaluations * 100) if total_evaluations else 0.0
+
+        top_kpi1, top_kpi2, top_kpi3 = st.columns(3, gap="small")
 
         with top_kpi1:
             self._metric_card("PACIENTES", total_patients)
@@ -91,32 +86,49 @@ class ClinicalDashboardView:
             self._metric_card("EVALUACIONES", total_evaluations)
 
         with top_kpi3:
-            self._metric_card("CASOS MALIGNOS", malignant_cases)
+            self._metric_card("RIESGO MALIGNO", f"{pct_malignant:.1f}%")
 
-        with top_kpi4:
-            self._metric_card("% CASOS MALIGNOS", f"{pct_malignant:.2f}%")
+        st.markdown("### Comparación rápida entre grupos")
+        st.caption(
+            f"{malignant_cases} evaluaciones fueron clasificadas como malignas. Los boxplots ayudan a ver si una variable tiende a concentrarse más alto o más dispersa en uno de los dos grupos."
+        )
 
-        row_1_left, row_1_mid, row_1_right = st.columns([1.05, 1.35, 1.85], gap="large")
+        row_1_col1, row_1_col2 = st.columns(2, gap="large")
+        row_2_col1, row_2_col2 = st.columns(2, gap="large")
 
-        with row_1_left:
-            self._render_diagnosis_distribution(df)
+        with row_1_col1:
+            self._render_boxplot_radius(df)
+            self._render_chart_help(
+                "Radio medio",
+                "Si el grupo maligno presenta medianas más altas o más dispersión, el tamaño tumoral tiende a asociarse con mayor severidad del caso."
+            )
 
-        with row_1_mid:
-            self._render_monthly_followup(df)
+        with row_1_col2:
+            self._render_boxplot_texture(df)
+            self._render_chart_help(
+                "Textura media",
+                "Diferencias en textura pueden sugerir cambios en la heterogeneidad del tejido. Mayor dispersión en malignos suele reflejar casos menos uniformes."
+            )
 
-        with row_1_right:
-            self._render_key_influencers(df)
+        with row_2_col1:
+            self._render_boxplot_area(df)
+            self._render_chart_help(
+                "Área media",
+                "Un área media más alta en casos malignos sugiere lesiones más extensas. También conviene observar valores atípicos por posible riesgo elevado."
+            )
 
-        row_2_left, row_2_mid, row_2_right = st.columns([1.1, 1.1, 1.8], gap="large")
+        with row_2_col2:
+            self._render_boxplot_smoothness(df)
+            self._render_chart_help(
+                "Suavidad media",
+                "La suavidad muestra qué tan regular es la superficie observada. Cambios sostenidos entre grupos pueden ayudar a separar casos benignos y malignos."
+            )
 
-        with row_2_left:
-            self._render_scatter(df)
-
-        with row_2_mid:
-            self._render_age_distribution(df)
-
-        with row_2_right:
-            self._render_dashboard_signature()
+        st.markdown("### Dashboard ejecutivo")
+        st.caption(
+            "Para visualizar mejor los datos, puedes revisar el siguiente dashboard interactivo."
+        )
+        self._render_power_bi_link()
 
     # =====================================================
     # CARGA Y PREPARACIÓN DE DATOS
@@ -124,7 +136,7 @@ class ClinicalDashboardView:
 
     def _load_dashboard_data(self) -> pd.DataFrame:
         """
-        Construye el dataset del dashboard unificando:
+        Construye el dataset unificando:
         - listado de pacientes
         - historial de mediciones por paciente
         """
@@ -148,13 +160,12 @@ class ClinicalDashboardView:
                 measurements = history_response.get("measurements", [])
                 patient_info = history_response.get("patient", patient)
             except Exception:
-                # Si un paciente falla, no botamos todo el dashboard.
+                # Si un paciente falla, no se cae toda la vista.
                 continue
 
             for measurement in measurements:
                 row = dict(measurement)
 
-                # Complementamos con datos del paciente.
                 row["patient_id"] = patient_info.get("patient_id", patient_id)
                 row["age"] = patient_info.get("age")
                 row["sex"] = patient_info.get("sex")
@@ -167,7 +178,7 @@ class ClinicalDashboardView:
 
     def _prepare_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Limpia y tipifica columnas necesarias para el dashboard.
+        Limpia y tipifica columnas necesarias para el análisis.
         """
         df = df.copy()
 
@@ -178,9 +189,6 @@ class ClinicalDashboardView:
             "texture_mean",
             "area_mean",
             "smoothness_mean",
-            "compactness_mean",
-            "concavity_mean",
-            "symmetry_mean",
             "prediction_score",
         ]
 
@@ -188,7 +196,7 @@ class ClinicalDashboardView:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
             else:
-                df[col] = np.nan
+                df[col] = None
 
         if "evaluation_date" not in df.columns:
             df["evaluation_date"] = pd.NaT
@@ -206,38 +214,9 @@ class ClinicalDashboardView:
             .str.title()
         )
 
-        df["year"] = df["evaluation_date"].dt.year
-        df["month_start"] = df["evaluation_date"].dt.to_period("M").dt.to_timestamp()
-
         return df
 
-    # =====================================================
-    # HELPERS DE UI
-    # =====================================================
-
-    def _render_year_filter(self, years: list[int]) -> list[int]:
-        """
-        Renderiza filtro de año.
-        """
-        with st.container(border=True):
-            st.markdown(
-                f"<div style='color:{self.colors.primary}; font-weight:800; font-size:1.1rem;'>Año</div>",
-                unsafe_allow_html=True,
-            )
-
-            selected_years = st.multiselect(
-                label="Año",
-                options=years,
-                default=years,
-                label_visibility="collapsed",
-            )
-
-        return selected_years
-
     def _metric_card(self, title: str, value) -> None:
-        """
-        Renderiza tarjeta KPI estilizada.
-        """
         st.markdown(
             f"""
             <div class="kpi-card">
@@ -248,272 +227,160 @@ class ClinicalDashboardView:
             unsafe_allow_html=True,
         )
 
-    # =====================================================
-    # VISUALES
-    # =====================================================
-
-    def _render_diagnosis_distribution(self, df: pd.DataFrame) -> None:
-        """
-        Donut chart Benign vs Malignant.
-        """
-        st.markdown(
-            "<div class='chart-title'>Distribución de diagnósticos</div>",
-            unsafe_allow_html=True,
-        )
-
-        counts = (
-            df["predicted_class"]
-            .value_counts()
-            .rename_axis("Predicción")
-            .reset_index(name="Casos")
-        )
-
-        fig = px.pie(
-            counts,
-            names="Predicción",
-            values="Casos",
-            hole=0.55,
-            color="Predicción",
-            color_discrete_map={
-                "Benign": self.colors.benign,
-                "Malignant": self.colors.malignant,
-            },
-        )
-
-        fig.update_traces(
-            textposition="outside",
-            textinfo="value+percent",
-            marker=dict(line=dict(color="white", width=2)),
-        )
-
-        fig.update_layout(
-            legend_title_text="Predicción",
-            margin=dict(t=10, b=10, l=10, r=10),
-            paper_bgcolor="white",
-            height=340,
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    def _render_monthly_followup(self, df: pd.DataFrame) -> None:
-        """
-        Gráfico de línea mensual.
-        """
-        st.markdown(
-            "<div class='chart-title'>Seguimiento mensual de evaluaciones de cáncer de mama</div>",
-            unsafe_allow_html=True,
-        )
-
-        monthly = (
-            df.groupby("month_start", as_index=False)
-            .size()
-            .rename(columns={"size": "Evaluaciones"})
-        )
-
-        fig = px.line(
-            monthly,
-            x="month_start",
-            y="Evaluaciones",
-            markers=True,
-        )
-
-        fig.update_traces(
-            line=dict(color=self.colors.benign, width=4),
-            marker=dict(size=9, color=self.colors.malignant),
-        )
-
-        fig.update_layout(
-            xaxis_title="Mes",
-            yaxis_title="Número de evaluaciones",
-            margin=dict(t=10, b=10, l=10, r=10),
-            paper_bgcolor="white",
-            height=340,
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    def _render_scatter(self, df: pd.DataFrame) -> None:
-        """
-        Scatter de radio medio vs textura media.
-        """
-        st.markdown(
-            "<div class='chart-title'>Relación entre radio y textura del tumor</div>",
-            unsafe_allow_html=True,
-        )
-
-        plot_df = df.dropna(subset=["radius_mean", "texture_mean"]).copy()
-
-        fig = px.scatter(
-            plot_df,
-            x="radius_mean",
-            y="texture_mean",
-            color="predicted_class",
-            color_discrete_map={
-                "Benign": self.colors.benign,
-                "Malignant": self.colors.malignant,
-            },
-            opacity=0.82,
-        )
-
-        fig.update_traces(
-            marker=dict(
-                size=10,
-                line=dict(width=0.5, color="white")
-            )
-        )
-
-        fig.update_layout(
-            xaxis_title="Radio medio del tumor",
-            yaxis_title="Textura media del tumor",
-            legend_title_text="Predicción",
-            margin=dict(t=10, b=10, l=10, r=10),
-            paper_bgcolor="white",
-            height=350,
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    def _render_age_distribution(self, df: pd.DataFrame) -> None:
-        """
-        Histograma de edad por predicción.
-        """
-        st.markdown(
-            "<div class='chart-title'>Distribución de pacientes por edad</div>",
-            unsafe_allow_html=True,
-        )
-
-        hist_df = df.dropna(subset=["age"]).copy()
-
-        fig = px.histogram(
-            hist_df,
-            x="age",
-            color="predicted_class",
-            nbins=10,
-            barmode="group",
-            color_discrete_map={
-                "Benign": self.colors.benign,
-                "Malignant": self.colors.malignant,
-            },
-        )
-
-        fig.update_layout(
-            xaxis_title="Edad del paciente",
-            yaxis_title="Número de pacientes",
-            legend_title_text="Predicción",
-            margin=dict(t=10, b=10, l=10, r=10),
-            paper_bgcolor="white",
-            height=320,
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    def _render_key_influencers(self, df: pd.DataFrame) -> None:
-        """
-        Aproximación del panel de influenciadores clave.
-        """
-        st.markdown(
-            "<div class='chart-title'>Elementos influyentes clave</div>",
-            unsafe_allow_html=True,
-        )
-
-        features = [
-            "area_mean",
-            "concavity_mean",
-            "texture_mean",
-            "smoothness_mean",
-            "radius_mean",
-            "compactness_mean",
-            "symmetry_mean",
-        ]
-
-        working = df[df["predicted_class"].isin(["Benign", "Malignant"])].copy()
-        benign = working[working["predicted_class"] == "Benign"]
-        malignant = working[working["predicted_class"] == "Malignant"]
-
-        rows = []
-
-        for col in features:
-            s_b = pd.to_numeric(benign[col], errors="coerce").dropna()
-            s_m = pd.to_numeric(malignant[col], errors="coerce").dropna()
-
-            if len(s_b) < 2 or len(s_m) < 2:
-                continue
-
-            mean_b = s_b.mean()
-            mean_m = s_m.mean()
-            pooled_std = np.sqrt((s_b.var(ddof=1) + s_m.var(ddof=1)) / 2)
-
-            if pooled_std == 0 or np.isnan(pooled_std):
-                continue
-
-            effect = (mean_m - mean_b) / pooled_std
-
-            rows.append(
-                {
-                    "feature": col,
-                    "effect": effect,
-                    "impact": abs(effect),
-                }
-            )
-
-        infl = pd.DataFrame(rows)
-
-        if infl.empty:
-            st.info("No hay datos suficientes para calcular influenciadores.")
-            return
-
-        infl = infl.sort_values("impact", ascending=False).head(7)
-
+    def _render_chart_help(self, label: str, text: str) -> None:
         st.markdown(
             f"""
-            <div style="background:{self.colors.soft_bg}; padding:1rem; border-radius:12px; border:1px solid {self.colors.border};">
-                <div style="font-size:1rem; color:{self.colors.text}; margin-bottom:0.8rem;">
-                    Qué influye en <b>predicted_class</b> para ser <b>Malignant</b>
-                </div>
+            <div class="viz-help">
+                <div class="viz-help-chip">Como leer el {label}</div>
+                <div class="viz-help-tooltip">{text}</div>
+            </div>
             """,
             unsafe_allow_html=True,
         )
 
-        max_impact = infl["impact"].max()
+    # =====================================================
+    # VISUALES: BOXPLOTS
+    # =====================================================
 
-        for _, row in infl.iterrows():
-            label = row["feature"].replace("_mean", "").replace("_", " ").title()
-            ratio = 1 + row["impact"] * 2.2
-            width_pct = 20 + (row["impact"] / max_impact) * 70
+    def _render_boxplot_radius(self, df: pd.DataFrame) -> None:
+        st.markdown("<div class='chart-title'>Boxplot de radio medio por clasificación</div>", unsafe_allow_html=True)
 
-            st.markdown(
-                f"""
-                <div style="margin-bottom:1rem;">
-                    <div style="display:flex; justify-content:space-between; gap:1rem;">
-                        <div style="width:70%; color:{self.colors.text}; font-size:0.95rem;">
-                            {label} sube
-                        </div>
-                        <div style="width:30%; text-align:right; color:{self.colors.primary_dark}; font-weight:700;">
-                            {ratio:.2f}x
-                        </div>
-                    </div>
-                    <div style="margin-top:0.35rem; background:#f6d7e5; border-radius:999px; height:14px; overflow:hidden;">
-                        <div style="width:{width_pct:.1f}%; background:{self.colors.benign}; height:14px; border-radius:999px;"></div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        plot_df = df[df["predicted_class"].isin(["Benign", "Malignant"])].dropna(
+            subset=["predicted_class", "radius_mean"]
+        )
 
-        st.markdown("</div>", unsafe_allow_html=True)
+        fig = px.box(
+            plot_df,
+            x="predicted_class",
+            y="radius_mean",
+            color="predicted_class",
+            points="outliers",
+            color_discrete_map={
+                "Benign": self.colors.benign,
+                "Malignant": self.colors.malignant,
+            },
+        )
 
-    def _render_dashboard_signature(self) -> None:
-        """
-        Firma visual inferior del dashboard.
-        """
+        fig.update_layout(
+            xaxis_title="Clasificación",
+            yaxis_title="Radio medio",
+            margin=dict(t=10, b=10, l=10, r=10),
+            paper_bgcolor="white",
+            height=360,
+            showlegend=False,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    def _render_boxplot_texture(self, df: pd.DataFrame) -> None:
+        st.markdown("<div class='chart-title'>Boxplot de textura media por clasificación</div>", unsafe_allow_html=True)
+
+        plot_df = df[df["predicted_class"].isin(["Benign", "Malignant"])].dropna(
+            subset=["predicted_class", "texture_mean"]
+        )
+
+        fig = px.box(
+            plot_df,
+            x="predicted_class",
+            y="texture_mean",
+            color="predicted_class",
+            points="outliers",
+            color_discrete_map={
+                "Benign": self.colors.benign,
+                "Malignant": self.colors.malignant,
+            },
+        )
+
+        fig.update_layout(
+            xaxis_title="Clasificación",
+            yaxis_title="Textura media",
+            margin=dict(t=10, b=10, l=10, r=10),
+            paper_bgcolor="white",
+            height=360,
+            showlegend=False,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    def _render_boxplot_area(self, df: pd.DataFrame) -> None:
+        st.markdown("<div class='chart-title'>Boxplot de área media por clasificación</div>", unsafe_allow_html=True)
+
+        plot_df = df[df["predicted_class"].isin(["Benign", "Malignant"])].dropna(
+            subset=["predicted_class", "area_mean"]
+        )
+
+        fig = px.box(
+            plot_df,
+            x="predicted_class",
+            y="area_mean",
+            color="predicted_class",
+            points="outliers",
+            color_discrete_map={
+                "Benign": self.colors.benign,
+                "Malignant": self.colors.malignant,
+            },
+        )
+
+        fig.update_layout(
+            xaxis_title="Clasificación",
+            yaxis_title="Área media",
+            margin=dict(t=10, b=10, l=10, r=10),
+            paper_bgcolor="white",
+            height=360,
+            showlegend=False,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    def _render_boxplot_smoothness(self, df: pd.DataFrame) -> None:
+        st.markdown("<div class='chart-title'>Boxplot de suavidad media por clasificación</div>", unsafe_allow_html=True)
+
+        plot_df = df[df["predicted_class"].isin(["Benign", "Malignant"])].dropna(
+            subset=["predicted_class", "smoothness_mean"]
+        )
+
+        fig = px.box(
+            plot_df,
+            x="predicted_class",
+            y="smoothness_mean",
+            color="predicted_class",
+            points="outliers",
+            color_discrete_map={
+                "Benign": self.colors.benign,
+                "Malignant": self.colors.malignant,
+            },
+        )
+
+        fig.update_layout(
+            xaxis_title="Clasificación",
+            yaxis_title="Suavidad media",
+            margin=dict(t=10, b=10, l=10, r=10),
+            paper_bgcolor="white",
+            height=360,
+            showlegend=False,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    # =====================================================
+    # POWER BI
+    # =====================================================
+
+    def _render_power_bi_link(self) -> None:
+        power_bi_url = self.power_bi_path.resolve().as_uri()
+        power_bi_label = escape(str(self.power_bi_path))
+
         st.markdown(
             f"""
-            <div style="margin-top:1rem; padding-top:0.6rem; border-top:2px solid {self.colors.border};">
-                <div style="font-size:2rem; font-weight:800; color:{self.colors.primary};">
-                    Breast Cancer Diagnostic Analysis Dashboard
-                </div>
-                <div style="font-size:0.95rem; color:{self.colors.primary_dark}; margin-top:0.2rem;">
-                    Machine Learning Model Insights
+            <div class="powerbi-box">
+                Este dashboard permite explorar los registros con una vista más ejecutiva,
+                interactiva y orientada a segmentaciones, tendencias y seguimiento clínico.
+                <br><br>
+                <a href="{power_bi_url}" target="_blank" class="powerbi-link">
+                    Visualizar dashboard ejecutivo
+                </a>
+                <div style="margin-top:0.85rem; color:{self.colors.text}; font-size:0.9rem;">
+                    Archivo local asociado: {power_bi_label}
                 </div>
             </div>
             """,
@@ -525,9 +392,6 @@ class ClinicalDashboardView:
     # =====================================================
 
     def _inject_css(self) -> None:
-        """
-        Inyecta estilos globales para la vista.
-        """
         st.markdown(
             f"""
             <style>
@@ -546,24 +410,114 @@ class ClinicalDashboardView:
 
             .kpi-title {{
                 color: {self.colors.primary};
-                font-size: 1.35rem;
+                font-size: 1.15rem;
                 font-weight: 800;
                 margin-bottom: 0.3rem;
             }}
 
             .kpi-value {{
                 color: {self.colors.primary_dark};
-                font-size: 3rem;
+                font-size: 2.4rem;
                 font-weight: 800;
                 line-height: 1.1;
             }}
 
             .chart-title {{
                 color: {self.colors.primary};
-                font-size: 1.15rem;
+                font-size: 1.1rem;
                 font-weight: 800;
                 margin-bottom: 0.35rem;
                 margin-top: 0.35rem;
+            }}
+
+            .info-banner {{
+                background: #fff7fa;
+                border-left: 6px solid {self.colors.primary};
+                padding: 1rem 1.2rem;
+                border-radius: 12px;
+                margin-bottom: 1rem;
+                color: {self.colors.text};
+                line-height: 1.6;
+            }}
+
+            .section-note {{
+                background: #fff7fa;
+                border: 1px solid {self.colors.border};
+                border-radius: 10px;
+                padding: 0.7rem 0.9rem;
+                margin-top: 0.5rem;
+                color: {self.colors.text};
+                font-size: 0.93rem;
+                line-height: 1.5;
+            }}
+
+            .viz-help {{
+                position: relative;
+                display: inline-flex;
+                flex-direction: column;
+                align-items: flex-start;
+                margin-top: 0.45rem;
+                margin-bottom: 0.35rem;
+            }}
+
+            .viz-help-chip {{
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                padding: 0.5rem 0.9rem;
+                border-radius: 999px;
+                border: 1px solid {self.colors.border};
+                background: #fff7fa;
+                color: {self.colors.primary};
+                font-size: 0.9rem;
+                font-weight: 700;
+                cursor: default;
+                box-shadow: 0 6px 14px rgba(231, 84, 128, 0.08);
+            }}
+
+            .viz-help-tooltip {{
+                opacity: 0;
+                pointer-events: none;
+                transform: translateY(6px);
+                transition: opacity 0.2s ease, transform 0.2s ease;
+                position: absolute;
+                top: calc(100% + 0.45rem);
+                left: 0;
+                min-width: 260px;
+                max-width: 420px;
+                background: #fffafb;
+                border: 1px solid {self.colors.border};
+                border-radius: 14px;
+                padding: 0.8rem 0.95rem;
+                color: {self.colors.text};
+                line-height: 1.55;
+                box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+                z-index: 20;
+            }}
+
+            .viz-help:hover .viz-help-tooltip {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
+
+            .powerbi-box {{
+                background: {self.colors.soft_bg};
+                border: 1px solid {self.colors.border};
+                border-radius: 14px;
+                padding: 1rem 1.2rem;
+                color: {self.colors.text};
+                line-height: 1.6;
+                margin-top: 0.5rem;
+            }}
+
+            .powerbi-link {{
+                display: inline-block;
+                background: {self.colors.primary};
+                color: white !important;
+                text-decoration: none;
+                padding: 0.65rem 1rem;
+                border-radius: 10px;
+                font-weight: 700;
             }}
             </style>
             """,

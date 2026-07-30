@@ -1,5 +1,5 @@
 # ========================================
-# 📌 dev.txt
+# dev.txt
 # Dependencias completas para entorno de desarrollo local
 # Incluye API, frontend, ML y librerías extra de análisis
 # ========================================

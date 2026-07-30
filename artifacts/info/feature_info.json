@@ -34,5 +34,13 @@
     "target_names": [
         "malignant",
         "benign"
-    ]
+    ],
+    "class_labels": [
+        "Malignant",
+        "Benign"
+    ],
+    "class_mapping": {
+        "0": "Malignant",
+        "1": "Benign"
+    }
 }

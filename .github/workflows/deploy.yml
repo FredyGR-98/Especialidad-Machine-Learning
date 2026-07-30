@@ -11,39 +11,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 📥 Checkout del repositorio
+    - name: Checkout del repositorio
       uses: actions/checkout@v4
 
-    - name: 🐍 Configurar Python
+    - name: Configurar Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
 
-    - name: 📦 Instalar dependencias
+    - name: Instalar dependencias
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements/dev.txt
 
-    - name: 🔧 Entrenar modelo
+    - name: Entrenar modelo
       run: python model/train_model.py
 
-    - name: 🗄 Inicializar base de datos
+    - name: Inicializar base de datos
       run: python scripts/init_db.py
 
-    - name: 🚀 Iniciar API en background
+    - name: Ejecutar pruebas automáticas
       env:
         PYTHONPATH: ${{ github.workspace }}
-      run: |
-        nohup python api/api.py > server.log 2>&1 &
-        for i in {1..20}; do
-          if curl -sSf http://127.0.0.1:5000/ >/dev/null; then
-            echo "API arriba ✅"
-            break
-          fi
-          sleep 1
-        done
-        echo "---- server.log ----"
-        tail -n 50 server.log || true
-
-    - name: 🧪 Ejecutar pruebas automáticas
       run: python -m pytest -v tests/

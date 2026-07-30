@@ -24,6 +24,7 @@ from core.router import Router
 from core.session_manager import SessionManager
 from services.api_client import ApiClient
 from services.auth_service import AuthService
+from utils.theme import APP_THEME
 
 
 class FrontendApp:
@@ -52,7 +53,7 @@ class FrontendApp:
         """
         st.set_page_config(
             page_title="Breast Cancer Clinical Data Analysis Platform",
-            page_icon="🩺",
+            page_icon="BC",
             layout="wide",
             initial_sidebar_state="expanded",
         )
@@ -61,22 +62,45 @@ class FrontendApp:
         """
         Inyecta estilos globales base de la aplicación.
         """
-        st.markdown(
-            """
-            <style>
+        css_variables = f"""
+        :root {{
+            --color-primary: {APP_THEME["primary"]};
+            --color-primary-soft: {APP_THEME["primary_soft"]};
+            --color-primary-dark: {APP_THEME["primary_dark"]};
+            --color-surface: {APP_THEME["surface"]};
+            --color-surface-soft: {APP_THEME["surface_soft"]};
+            --color-surface-alt: {APP_THEME["surface_alt"]};
+            --color-background: {APP_THEME["background"]};
+            --color-background-start: {APP_THEME["background_gradient_start"]};
+            --color-background-end: {APP_THEME["background_gradient_end"]};
+            --color-border: {APP_THEME["border"]};
+            --color-border-soft: {APP_THEME["border_soft"]};
+            --color-text: {APP_THEME["text"]};
+            --color-text-muted: {APP_THEME["text_muted"]};
+            --color-text-soft: {APP_THEME["text_soft"]};
+            --shadow-primary: {APP_THEME["shadow"]};
+            --shadow-soft: {APP_THEME["shadow_soft"]};
+        }}
+        """
+
+        css_rules = """
             /* =========================
                FONDO GENERAL
             ========================= */
             .stApp {
-                background: #fff6fa;
+                background: var(--color-background);
             }
 
             /* =========================
                SIDEBAR GENERAL
             ========================= */
             section[data-testid="stSidebar"] {
-                background: linear-gradient(180deg, #ffe5ef 0%, #ffd9e8 100%);
-                border-right: 1px solid #f3bfd0;
+                background: linear-gradient(
+                    180deg,
+                    var(--color-background-start) 0%,
+                    var(--color-background-end) 100%
+                );
+                border-right: 1px solid var(--color-border);
             }
 
             section[data-testid="stSidebar"] > div {
@@ -85,7 +109,7 @@ class FrontendApp:
 
             /* Texto general sidebar */
             section[data-testid="stSidebar"] * {
-                color: #4a3b47;
+                color: var(--color-text);
             }
 
             /* Radio labels */
@@ -97,49 +121,63 @@ class FrontendApp:
             /* Botones sidebar */
             section[data-testid="stSidebar"] button {
                 border-radius: 14px !important;
-                border: 1px solid #efbfd0 !important;
-                background: #ffffff !important;
-                color: #c2185b !important;
+                border: 1px solid var(--color-border) !important;
+                background: var(--color-surface) !important;
+                color: var(--color-primary) !important;
                 font-weight: 700 !important;
             }
 
             section[data-testid="stSidebar"] button:hover {
-                border-color: #e75480 !important;
-                color: #e75480 !important;
+                border-color: var(--color-primary-soft) !important;
+                color: var(--color-primary-soft) !important;
             }
 
             /* Línea divisoria */
             section[data-testid="stSidebar"] hr {
-                border-color: #f1bfd0 !important;
+                border-color: var(--color-border) !important;
             }
 
             /* =========================
                HEADER PERSONALIZADO SIDEBAR
             ========================= */
             .sidebar-brand {
-                background: rgba(255, 255, 255, 0.72);
-                border: 1px solid #f3bfd0;
-                border-radius: 22px;
-                padding: 18px 16px;
-                margin-bottom: 1rem;
-                box-shadow: 0 8px 20px rgba(231, 84, 128, 0.06);
+                position: relative;
+                background:
+                    radial-gradient(circle at top left, rgba(231, 84, 128, 0.18), transparent 34%),
+                    rgba(255, 255, 255, 0.78);
+                border: 1px solid var(--color-border);
+                border-radius: 24px;
+                padding: 16px 15px 15px 15px;
+                margin-bottom: 0.9rem;
+                box-shadow: 0 10px 22px var(--shadow-primary);
             }
 
             .sidebar-brand-title {
-                color: #c2185b;
-                font-size: 1.25rem;
+                color: var(--color-primary);
+                font-size: 1.18rem;
                 font-weight: 800;
                 line-height: 1.2;
-                margin-bottom: 0.35rem;
+                margin-bottom: 0.28rem;
             }
 
             .sidebar-brand-subtitle {
-                color: #6d5863;
-                font-size: 0.88rem;
+                color: var(--color-text-muted);
+                font-size: 0.84rem;
                 line-height: 1.45;
             }
-            </style>
-            """,
+
+            .sidebar-brand-kicker {
+                color: var(--color-primary);
+                font-size: 0.76rem;
+                font-weight: 800;
+                letter-spacing: 0.16em;
+                text-transform: uppercase;
+                margin-bottom: 0.45rem;
+            }
+        """
+
+        st.markdown(
+            "<style>" + css_variables + css_rules + "</style>",
             unsafe_allow_html=True,
         )
 
@@ -184,6 +222,9 @@ class FrontendApp:
             st.sidebar.markdown(
                 """
                 <div class="sidebar-brand">
+                    <div class="sidebar-brand-kicker">
+                        Plataforma
+                    </div>
                     <div class="sidebar-brand-title">
                         Breast Cancer Platform
                     </div>

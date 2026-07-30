@@ -1,14 +1,10 @@
 """
-===========================================================
-📌 api.py — API Flask para exponer el modelo entrenado
-===========================================================
+API Flask para exponer el modelo entrenado.
 
-Esta API carga los artefactos generados en train_model.py
+Esta API carga los artefactos generados en `train_model.py`
 y expone endpoints para predicción, métricas e imágenes.
 
-⚠️ IMPORTANTE:
-Este proyecto es con fines EDUCATIVOS y no constituye diagnóstico médico.
-===========================================================
+Este proyecto tiene fines educativos y no constituye diagnóstico médico.
 """
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -19,11 +15,15 @@ from pathlib import Path
 import pandas as pd
 import logging
 import os
-
-from database.db_manager import DatabaseManager
+import sys
 
 # === CONFIGURACIÓN DE RUTAS ===
 BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
+from database.db_manager import DatabaseManager
+
 ARTIFACTS_DIR = BASE_DIR / "artifacts"
 
 MODEL_PATH = ARTIFACTS_DIR / "model" / "model.pkl"
@@ -98,6 +98,10 @@ FEATURE_NAME_MAP = {
 
 MODEL_FEATURE_SET = set(feature_info["feature_names"])
 DB_FEATURE_SET = set(FEATURE_NAME_MAP.keys())
+CLASS_LABELS = feature_info.get(
+    "class_labels",
+    [str(label).strip().capitalize() for label in feature_info["target_names"]],
+)
 
 
 # =========================================================
@@ -116,6 +120,7 @@ def validate_feature_payload(data: dict) -> tuple[bool, dict | None, int]:
 
     valid_features = MODEL_FEATURE_SET
     provided_features = set(data.keys())
+    missing_features = valid_features - provided_features
 
     if not provided_features.issubset(valid_features):
         return False, {
@@ -123,8 +128,11 @@ def validate_feature_payload(data: dict) -> tuple[bool, dict | None, int]:
             "invalid_features": sorted(list(provided_features - valid_features))
         }, 400
 
-    if len(provided_features) == 0:
-        return False, {"error": "No se enviaron características reconocidas"}, 400
+    if missing_features:
+        return False, {
+            "error": "Faltan características obligatorias para ejecutar la predicción",
+            "missing_features": sorted(list(missing_features))
+        }, 400
 
     return True, None, 200
 
@@ -223,8 +231,7 @@ def build_feature_dataframe(data: dict) -> pd.DataFrame:
     Convierte el payload en DataFrame y garantiza el orden completo de features.
     """
     df = pd.DataFrame([data])
-    df = df.reindex(columns=feature_info["feature_names"], fill_value=0)
-    return df
+    return df.reindex(columns=feature_info["feature_names"])
 
 
 def run_model_prediction(data: dict) -> dict:
@@ -236,14 +243,19 @@ def run_model_prediction(data: dict) -> dict:
     prediction = int(model.predict(df)[0])
     probabilities = model.predict_proba(df)[0].tolist()
 
-    predicted_class = "Malignant" if prediction == 1 else "Benign"
+    predicted_class = CLASS_LABELS[prediction]
     prediction_score = float(max(probabilities))
     model_version = "rf_v1"
+    class_probabilities = {
+        class_label: float(probabilities[class_index])
+        for class_index, class_label in enumerate(CLASS_LABELS)
+    }
 
     return {
         "input": data,
         "prediction": prediction,
         "probability": probabilities,
+        "class_probabilities": class_probabilities,
         "predicted_class": predicted_class,
         "prediction_score": prediction_score,
         "model_version": model_version
@@ -256,7 +268,7 @@ def run_model_prediction(data: dict) -> dict:
 @app.route("/", methods=["GET"])
 def root():
     return jsonify({
-        "message": "Bienvenido a la API de Clasificación de Cáncer de Mama 🚀",
+        "message": "Bienvenido a la API de clasificación de cáncer de mama",
         "endpoints": {
             "/health": "Prueba de estado",
             "/model/info": "Información del modelo y métricas",
@@ -275,7 +287,7 @@ def root():
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "message": "API funcionando 🚀"})
+    return jsonify({"status": "ok", "message": "API funcionando"})
 
 
 @app.route("/model/info", methods=["GET"])
@@ -283,6 +295,7 @@ def model_info():
     return jsonify({
         "features": feature_info["feature_names"],
         "targets": feature_info["target_names"],
+        "class_labels": CLASS_LABELS,
         "metrics": metrics
     })
 
@@ -447,6 +460,7 @@ def predict():
             "input": result["input"],
             "prediction": result["prediction"],
             "probability": result["probability"],
+            "class_probabilities": result["class_probabilities"],
             "predicted_class": result["predicted_class"],
             "prediction_score": result["prediction_score"],
             "model_version": result["model_version"]
@@ -625,8 +639,19 @@ def predict_batch():
 
         file = request.files["file"]
         df = pd.read_csv(file)
+        provided_columns = set(df.columns)
+        expected_columns = MODEL_FEATURE_SET
+        missing_columns = expected_columns - provided_columns
+        invalid_columns = provided_columns - expected_columns
 
-        df = df.reindex(columns=feature_info["feature_names"], fill_value=0)
+        if missing_columns or invalid_columns:
+            return jsonify({
+                "error": "El CSV debe contener exactamente las columnas esperadas por el modelo",
+                "missing_features": sorted(list(missing_columns)),
+                "invalid_features": sorted(list(invalid_columns))
+            }), 400
+
+        df = df.reindex(columns=feature_info["feature_names"])
 
         predictions = model.predict(df).tolist()
         probas = model.predict_proba(df).tolist()

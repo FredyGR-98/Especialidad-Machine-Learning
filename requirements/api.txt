@@ -1,5 +1,5 @@
 # ========================================
-# 📌 api.txt
+# api.txt
 # Dependencias específicas para la API Flask
 # Incluye Flask y CORS para comunicación
 # ========================================

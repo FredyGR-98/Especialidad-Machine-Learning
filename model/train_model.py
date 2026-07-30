@@ -1,16 +1,11 @@
 """
-===========================================================
-📌 train_model.py — Entrenamiento y generación de artefactos
-===========================================================
+Entrenamiento y generación de artefactos del modelo.
 
 Este script entrena un modelo de clasificación de cáncer de mama,
-genera métricas, visualizaciones y guarda todos los artefactos
-necesarios para que luego sean servidos por la API y mostrados en
-el frontend.
+genera métricas, visualizaciones y guarda los artefactos necesarios
+para la API y el frontend.
 
-⚠️ IMPORTANTE:
-Este proyecto es con fines EDUCATIVOS y no constituye diagnóstico médico.
-===========================================================
+Este proyecto tiene fines educativos y no constituye diagnóstico médico.
 """
 
 # === IMPORTACIONES ===
@@ -61,6 +56,13 @@ CARD_BG = "#FFFFFF"
 TEXT_MAIN = "#4A3B47"
 ACCENT = "#B388C4"
 GRID_SOFT = "#F3D6E2"
+CLASS_LABELS = ["Malignant", "Benign"]
+VISUALIZATION_FILENAMES = {
+    "confusion_matrix": "confusion_matrix.png",
+    "roc_curve": "roc_curve.png",
+    "feature_importance": "feature_importance.png",
+    "correlation_matrix": "correlation_matrix.png",
+}
 
 
 # === 1. CARGA DE DATOS ===
@@ -106,13 +108,14 @@ def train_model(X, y):
         "accuracy": accuracy_score(y_test, y_pred),
         "f1_score": f1_score(y_test, y_pred),
         "roc_auc": roc_auc_score(y_test, y_proba),
+        "positive_class": "Benign",
     }
 
     return model, metrics, (X_test, y_test, y_pred, y_proba)
 
 
 # === 3. GUARDADO DEL MODELO Y METADATA ===
-def save_artifacts(model, dataset, metrics, X_test):
+def save_artifacts(model, dataset, metrics, X_test, y_test):
     """
     Guarda el modelo entrenado, metadata del dataset,
     métricas y ejemplos de casos.
@@ -124,6 +127,11 @@ def save_artifacts(model, dataset, metrics, X_test):
     feature_info = {
         "feature_names": list(dataset.feature_names),
         "target_names": list(dataset.target_names),
+        "class_labels": CLASS_LABELS,
+        "class_mapping": {
+            str(class_index): class_label
+            for class_index, class_label in enumerate(CLASS_LABELS)
+        },
     }
     with open(FEATURE_INFO_PATH, "w", encoding="utf-8") as f:
         json.dump(feature_info, f, indent=4, ensure_ascii=False)
@@ -133,10 +141,12 @@ def save_artifacts(model, dataset, metrics, X_test):
         json.dump(metrics, f, indent=4, ensure_ascii=False)
 
     # Guardar ejemplos precargados
-    examples = {
-        "benign_case": X_test.iloc[0].to_dict(),
-        "malignant_case": X_test.iloc[-1].to_dict(),
-    }
+    examples = {}
+    for target_value, example_key in ((1, "benign_case"), (0, "malignant_case")):
+        matching_indices = y_test[y_test == target_value].index
+        if len(matching_indices) > 0:
+            examples[example_key] = X_test.loc[matching_indices[0]].to_dict()
+
     with open(EXAMPLES_PATH, "w", encoding="utf-8") as f:
         json.dump(examples, f, indent=4, ensure_ascii=False)
 
@@ -168,12 +178,12 @@ def apply_plot_style():
 
 
 # === 5. LIMPIEZA DE VISUALIZACIONES ANTIGUAS ===
-def remove_old_visualizations():
+def cleanup_visualizations():
     """
-    Elimina gráficos antiguos del esquema light/dark para evitar
-    confusiones dentro de artifacts/visualizations.
+    Elimina visualizaciones heredadas para mantener una sola convención
+    de nombres y una única paleta visual.
     """
-    old_files = [
+    files_to_remove = [
         "confusion_matrix_light.png",
         "confusion_matrix_dark.png",
         "roc_curve_light.png",
@@ -182,9 +192,13 @@ def remove_old_visualizations():
         "feature_importance_dark.png",
         "correlation_matrix_light.png",
         "correlation_matrix_dark.png",
+        "confusion_matrix_pink.png",
+        "roc_curve_pink.png",
+        "feature_importance_pink.png",
+        "correlation_matrix_pink.png",
     ]
 
-    for filename in old_files:
+    for filename in files_to_remove:
         file_path = VISUALIZATIONS_DIR / filename
         if file_path.exists():
             file_path.unlink()
@@ -197,14 +211,14 @@ def generate_visualizations(y_test, y_pred, y_proba, model, X):
     estética rosada/pastel coherente con la UI del proyecto.
     """
     apply_plot_style()
-    remove_old_visualizations()
+    cleanup_visualizations()
 
     print("BASE_DIR:", BASE_DIR)
     print("ARTIFACTS_DIR:", ARTIFACTS_DIR)
     print("VISUALIZATIONS_DIR:", VISUALIZATIONS_DIR)
 
     # === Datos base para las gráficas ===
-    cm = confusion_matrix(y_test, y_pred)
+    cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
     fpr, tpr, _ = roc_curve(y_test, y_proba)
     auc = roc_auc_score(y_test, y_proba)
 
@@ -226,8 +240,8 @@ def generate_visualizations(y_test, y_pred, y_proba, model, X):
         cbar=True,
         linewidths=1.2,
         linecolor=PINK_SOFT,
-        xticklabels=["Benigno", "Maligno"],
-        yticklabels=["Benigno", "Maligno"],
+        xticklabels=CLASS_LABELS,
+        yticklabels=CLASS_LABELS,
         annot_kws={"color": TEXT_MAIN, "fontsize": 12, "weight": "bold"},
     )
 
@@ -240,7 +254,7 @@ def generate_visualizations(y_test, y_pred, y_proba, model, X):
     ax.set_xlabel("Predicción", fontsize=12, color=TEXT_MAIN)
     ax.set_ylabel("Real", fontsize=12, color=TEXT_MAIN)
 
-    cm_path = VISUALIZATIONS_DIR / "confusion_matrix_pink.png"
+    cm_path = VISUALIZATIONS_DIR / VISUALIZATION_FILENAMES["confusion_matrix"]
     plt.tight_layout()
     plt.savefig(cm_path, dpi=300, bbox_inches="tight", facecolor=PINK_BG)
     plt.close()
@@ -275,7 +289,7 @@ def generate_visualizations(y_test, y_pred, y_proba, model, X):
     plt.ylabel("Tasa de Verdaderos Positivos", fontsize=12, color=TEXT_MAIN)
     plt.legend(loc="lower right", frameon=True, facecolor="white", edgecolor=PINK_SOFT)
 
-    roc_path = VISUALIZATIONS_DIR / "roc_curve_pink.png"
+    roc_path = VISUALIZATIONS_DIR / VISUALIZATION_FILENAMES["roc_curve"]
     plt.tight_layout()
     plt.savefig(roc_path, dpi=300, bbox_inches="tight", facecolor=PINK_BG)
     plt.close()
@@ -315,7 +329,7 @@ def generate_visualizations(y_test, y_pred, y_proba, model, X):
         pad=14,
     )
 
-    fi_path = VISUALIZATIONS_DIR / "feature_importance_pink.png"
+    fi_path = VISUALIZATIONS_DIR / VISUALIZATION_FILENAMES["feature_importance"]
     plt.tight_layout()
     plt.savefig(fi_path, dpi=300, bbox_inches="tight", facecolor=PINK_BG)
     plt.close()
@@ -346,7 +360,7 @@ def generate_visualizations(y_test, y_pred, y_proba, model, X):
     plt.xticks(rotation=90, ha="right", fontsize=8, color=TEXT_MAIN)
     plt.yticks(rotation=0, fontsize=8, color=TEXT_MAIN)
 
-    corr_path = VISUALIZATIONS_DIR / "correlation_matrix_pink.png"
+    corr_path = VISUALIZATIONS_DIR / VISUALIZATION_FILENAMES["correlation_matrix"]
     plt.tight_layout()
     plt.savefig(corr_path, dpi=250, bbox_inches="tight", facecolor=PINK_BG)
     plt.close()
@@ -355,11 +369,11 @@ def generate_visualizations(y_test, y_pred, y_proba, model, X):
 
 # === MAIN ===
 if __name__ == "__main__":
-    print("🚀 Iniciando entrenamiento")
+    print("Iniciando entrenamiento del modelo")
 
     X, y, dataset = load_data()
     model, metrics, results = train_model(X, y)
-    save_artifacts(model, dataset, metrics, results[0])
+    save_artifacts(model, dataset, metrics, results[0], results[1])
     generate_visualizations(results[1], results[2], results[3], model, X)
 
-    print("✅ Entrenamiento completo. Artefactos guardados en /artifacts/")
+    print("Entrenamiento completado. Artefactos guardados en /artifacts/")

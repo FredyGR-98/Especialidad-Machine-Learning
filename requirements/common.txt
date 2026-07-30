@@ -1,5 +1,5 @@
 # ========================================
-# 📌 common.txt
+# common.txt
 # Librerías comunes para ML y manipulación de datos
 # Usadas tanto en entrenamiento, API y frontend
 # ========================================

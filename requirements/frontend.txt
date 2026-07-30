@@ -1,5 +1,5 @@
 # ========================================
-# 📌 frontend.txt
+# frontend.txt
 # Dependencias específicas para el dashboard Streamlit
 # ========================================
 

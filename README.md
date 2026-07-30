@@ -1,208 +1,332 @@
-# 🔬 Detector de Cáncer de Mama — MLOps
+# Breast Cancer MLOps Platform
 
-![CI/CD](https://github.com/FredyGR-98/detector-cancer-mama-mlops/actions/workflows/deploy.yml/badge.svg)
+![CI](https://github.com/FredyGR-98/detector-cancer-mama-mlops/actions/workflows/deploy.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.11-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
----
+Plataforma demostrativa orientada a prediccion clinica, registro de evaluaciones y analitica aplicada para cancer de mama. El proyecto integra un modelo de machine learning entrenado con variables morfologicas, una API Flask para inferencia, una interfaz en Streamlit para uso operativo y una capa de visualizacion en Power BI conectada a SQLite como fuente persistente.
 
-🚀 Proyecto de **Machine Learning + MLOps** que entrena un modelo de clasificación de cáncer de mama y lo expone mediante una **API Flask** y un **frontend en Streamlit**, con integración de **Docker** y **CI/CD en GitHub Actions**.
+Este repositorio fue reorganizado para presentarse como una pieza de portafolio tecnico en analisis de datos, machine learning aplicado y MLOps. No corresponde a un sistema medico validado ni debe utilizarse para diagnostico real.
 
-> ⚠️ Este proyecto es educativo y **no constituye diagnóstico médico**.
+## Resumen ejecutivo
 
-Incluye:  
-- 🧠 **Random Forest** entrenado en Python.  
-- 🌐 **API Flask** para exponer el modelo como servicio REST.  
-- 🎨 **Frontend en Streamlit** con ejemplos visuales y sliders interactivos.  
-- 🐳 **Docker Compose** para levantar API + Frontend en contenedores.  
-- ⚙️ **GitHub Actions (CI/CD)** para pruebas automáticas.  
+El caso parte del dataset `Wisconsin Breast Cancer Diagnostic` y lo transforma en una solucion end-to-end con cuatro capas:
 
----
+- entrenamiento y serializacion del modelo
+- servicio de prediccion mediante API REST
+- captura y seguimiento de registros clinicos en una interfaz Streamlit
+- visualizacion ejecutiva de la informacion historica en Power BI
 
-## 📌 Descripción del Proyecto  
+La aplicacion permite simular un flujo realista donde un usuario registra un caso, ejecuta una prediccion, guarda el resultado en SQLite y luego analiza el comportamiento agregado de los casos desde un dashboard externo.
 
-La finalidad es ofrecer una herramienta simple que, en base a **30 características clínicas** de un tumor, prediga si es **benigno** o **maligno**.  
+## Problema abordado
 
-Ejemplos de variables:  
-- Radio, textura, perímetro y área promedio.  
-- Suavidad, compacidad y concavidad.  
-- Simetría y dimensión fractal.  
+El objetivo del proyecto es demostrar como un problema clasico de clasificacion binaria puede escalarse a una solucion mas cercana a un entorno aplicado. En lugar de quedarse en un notebook o en un script de entrenamiento, el repositorio busca responder tres preguntas practicas:
 
-Predicciones posibles:  
-- ✅ **Benigno**  
-- ⚠️ **Maligno**  
+- como exponer el modelo para ser consumido por una interfaz
+- como persistir las predicciones y generar historial clinico
+- como reutilizar esos registros para una capa de analitica y monitoreo
 
----
-## 📂 Estructura del Proyecto
+## Solucion propuesta
+
+La plataforma se apoya en 30 variables clinicas numericas derivadas de mediciones celulares. El modelo clasifica cada caso como `Benign` o `Malignant`, devuelve probabilidades por clase y almacena el resultado junto con los datos del paciente y la fecha de evaluacion.
+
+Sobre esa base se construyeron dos experiencias complementarias:
+
+- un predictor clinico en Streamlit para el ingreso de pacientes, comparacion de controles y ejecucion de nuevas predicciones
+- un dashboard en Power BI orientado a lectura ejecutiva, segmentacion por edad, seguimiento temporal y analisis visual de los diagnosticos registrados
+
+## Arquitectura del proyecto
+
+```text
+Frontend Streamlit
+        |
+        v
+API Flask /predict-and-save
+        |
+        v
+SQLite (patients, clinical_measurements, system_users)
+        |
+        +--> Power BI Dashboard
+        |
+        +--> Scripts de carga sintetica
+
+Modelo entrenado -> artifacts/model/model.pkl
+Metricas y visualizaciones -> artifacts/info + artifacts/visualizations
+```
+
+Flujo principal:
+
+1. `model/train_model.py` entrena el modelo y genera artefactos.
+2. `api/api.py` carga el modelo y expone endpoints de prediccion.
+3. `frontend/app.py` consume la API y permite registrar casos.
+4. `database/breast_cancer_clinical.db` almacena pacientes y evaluaciones.
+5. `powerbi/breast_cancer_dashboard.pbix` consume la base SQLite por ODBC para construir la lectura ejecutiva.
+
+## Stack tecnico
+
+- Python 3.11
+- scikit-learn
+- pandas
+- Flask
+- Streamlit
+- SQLite
+- Power BI
+- Docker
+- pytest
+- GitHub Actions
+
+## Resultados del modelo
+
+Metricas generadas a partir del entrenamiento actual:
+
+- Accuracy: `94.74%`
+- F1-score: `95.83%`
+- ROC AUC: `0.9937`
+
+Modelo actual:
+
+- algoritmo: `Random Forest Classifier`
+- tipo de problema: clasificacion binaria
+- clases estimadas: `Malignant` y `Benign`
+- variables de entrada: `30`
+
+## Experiencia del proyecto
+
+### Predictor clinico
+
+La interfaz Streamlit fue reorganizada para presentar el caso de forma mas profesional y menos academica. Actualmente incluye:
+
+- pantalla inicial con contexto del problema
+- vista de analisis del modelo y sus metricas
+- modulo de pacientes con historial y nuevos controles
+- KPI visual de riesgo en la prediccion
+- persistencia del resultado en SQLite
+
+Espacio para video demostrativo del predictor:
+
+`[Agregar video o GIF del flujo de prediccion en Streamlit]`
+
+### Dashboard clinico en Power BI
+
+El dashboard se conecto a SQLite mediante ODBC para leer la misma base que alimenta la aplicacion. La vista ejecutiva actual resume:
+
+- distribucion de diagnosticos estimados
+- evolucion mensual de evaluaciones clinicas
+- casos detectados por grupo etario
+- relacion entre radio medio y textura media por diagnostico
+- concentracion de evaluaciones por grupo etario
+- mapa de calor por edad y clasificacion
+
+Espacio para video demostrativo del dashboard:
+
+`[Agregar video o GIF de navegacion del dashboard en Power BI]`
+
+## Fuente de datos
+
+El caso utiliza el dataset `Wisconsin Breast Cancer Diagnostic`, disponible en `sklearn.datasets.load_breast_cancer`. El conjunto original contiene 569 registros y 30 atributos numericos relacionados con:
+
+- tamano y geometria del tumor
+- textura y superficie
+- forma e irregularidad
+- medidas promedio, error estandar y peor valor observado
+
+Sobre ese dataset base se construyo una capa de persistencia clinica local para simular historial de pacientes, controles repetidos y consumo posterior desde un dashboard.
+
+## Estructura del repositorio
+
+```text
+breast-cancer-mlops/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
+├── api/
+│   └── api.py
+├── artifacts/
+│   ├── info/
+│   ├── model/
+│   └── visualizations/
+├── database/
+│   ├── breast_cancer_clinical.db
+│   ├── db_manager.py
+│   ├── schema.sql
+│   └── seed_data.sql
+├── docker/
+│   ├── docker-compose.yml
+│   ├── Dockerfile.api
+│   └── Dockerfile.frontend
+├── frontend/
+│   ├── app.py
+│   ├── components/
+│   ├── services/
+│   ├── utils/
+│   └── views/
+├── model/
+│   └── train_model.py
+├── powerbi/
+│   ├── breast_cancer_dashboard.pbix
+│   └── dashboard_redesign_plan.md
+├── requirements/
+│   ├── api.txt
+│   ├── common.txt
+│   ├── dev.txt
+│   └── frontend.txt
+├── scripts/
+│   ├── init_db.py
+│   └── seed_demo_patients.py
+├── tests/
+│   └── test_api.py
+└── README.md
+```
+
+## Instalacion local
 
 ```bash
-breast_cancer_project/
-📂 .github/
-│   └── 📂 workflows/
-│       └── ⚙️ ci-cd.yml          # Flujo de trabajo de CI/CD
-
-📂 breast_cancer_app/
-│   ├── 📂 model/
-│   │   └── 📄 train_model.py     # Script de entrenamiento
-│   ├── 📂 api/
-│   │   └── 📄 api.py             # API Flask
-│   ├── 📂 frontend/
-│   │   └── 📄 frontend.py        # Frontend Streamlit
-
-📂 tests/
-│   └── 🧪 test_api.py            # Tests automatizados
-
-📂 requirements/
-│   ├── 📄 common.txt             # Dependencias comunes
-│   ├── 📄 api.txt                # Dependencias de la API
-│   ├── 📄 frontend.txt           # Dependencias del Frontend
-│   └── 📄 dev.txt                # Dependencias de desarrollo
-
-📂 artifacts/ (automático)
-│   ├── 🤖 model.pkl              # Modelo entrenado
-│   ├── 📄 feature_info.json      # Info de features
-│   ├── 📄 model_metrics.json     # Métricas
-│   └── 🖼️ *.png                  # Visualizaciones
-
-📂 docker/
-│   ├── 🐳 Dockerfile.api         # Dockerfile de la API
-│   ├── 🐳 Dockerfile.frontend    # Dockerfile del Frontend
-│   └── ⚙️ docker-compose.yml     # Orquestador de contenedores
-
-⚙️ .dockerignore                  # Archivos a ignorar en Docker
-📄 README.md                      # Documentación del proyecto
-```
----
-
-## 📦 Instalación y Requisitos
-
-### 🔑 Prerrequisitos
-Antes de comenzar, asegúrate de tener instalado:
-- 🐍 **Python 3.10+** (probado con 3.11)  
-- 📦 **pip** (administrador de paquetes de Python)  
-- 🐳 **Docker + Docker Compose** (opcional, para ejecución contenerizada)  
-- 🛠️ **Git** (para clonar y gestionar el repositorio)  
-
----
-
-### ⚙️ Instalación Local
-
-1️⃣ **Clonar el repositorio**
-```bash
-git clone https://github.com/<tu_usuario>/breast_cancer_project.git
-cd breast_cancer_project
-```
-### 2️⃣ Crear entorno virtual (opcional pero recomendado)
-```bash
-py -m venv mlops-env            # Instalacion del entorno virtual
-mlops-env\Scripts\activate      # Activa el entorno en Windows PowerShell
-source mlops-env/bin/activate   # Activa el entorno en Linux/Mac
-```
-### 3️⃣ Instalar dependencias
-Por separado:
-```bash  
-- `requirements/common.txt` → Librerías comunes para todo el proyecto (ej. pandas, numpy, joblib).  
-- `requirements/api.txt` → Librerías necesarias para la API Flask.  
-- `requirements/frontend.txt` → Librerías necesarias para el frontend en Streamlit.  
-```
-Ejecutar:  
-```bash
-pip install -r requirements/common.txt
-pip install -r requirements/api.txt
-pip install -r requirements/frontend.txt
-```
-## Opción rápida (instala todas las dependencias de una sola vez con dev.txt):
-```bash
+git clone https://github.com/<tu-usuario>/breast-cancer-mlops.git
+cd breast-cancer-mlops
+py -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements/dev.txt
 ```
-📌 dev.txt incluye en cascada:
+
+## Ejecucion local
+
+### 1. Entrenar el modelo
+
 ```bash
-common.txt
-   ├─ api.txt
-   └─ frontend.txt
+python model/train_model.py
 ```
----
 
-## 🚀 Uso del Sistema
+Esto regenera:
 
-### 🔧 Entrenar el modelo
-Si aún no tienes los artefactos (`model.pkl`, métricas, visualizaciones), ejecútalo una vez:
+- `artifacts/model/model.pkl`
+- `artifacts/info/model_metrics.json`
+- `artifacts/info/feature_info.json`
+- visualizaciones en `artifacts/visualizations/`
+
+### 2. Inicializar la base de datos
+
 ```bash
-python train_model.py
+python scripts/init_db.py
 ```
-Esto generará en la carpeta artifacts/:
-- 📂 model/ → Modelo entrenado en formato .pkl.
-- 📂 info/ → Información de métricas, features y casos de ejemplo.
-- 📂 visualizations/ → Gráficas del modelo (matriz de confusión, curva ROC, etc.).
 
-### 2. Ejecutar la API en modo local
+### 3. Poblar la base con datos sinteticos
+
+Carga base:
+
 ```bash
-py api/api.py
+.\mlops-env\Scripts\python.exe scripts\seed_demo_patients.py
 ```
-- ✔️ Disponible en: http://127.0.0.1:5000
 
-> ⚠️ **Nota importante:**  
-> Este enlace es solo para **verificar que la API está corriendo** y que responde correctamente.  
-> La **interfaz interactiva** está en el **frontend (Streamlit)**, descrita más abajo.
+Carga ampliada para historico entre 2020 y 2026:
 
-Endpoints principales:
-- /health → Verificar estado de la API.
-- /model/info → Información del modelo y métricas.
-- /examples → Casos de ejemplo.
-- /predict → Predicción individual (POST JSON).
-- /visualizations/<archivo> → Acceder a gráficas generadas.
-
----
-
-### 🎨 Frontend interactivo (Streamlit)
 ```bash
-streamlit run frontend.py
+.\mlops-env\Scripts\python.exe scripts\seed_demo_patients.py --patients 54 --evaluations 4 --start-year 2020 --end-year 2026
 ```
-- ✔️ Disponible en: http://127.0.0.1:8501
 
-Aquí podrás interactuar con el modelo de manera visual e intuitiva:
-- 🎚️ Sliders dinámicos para ajustar las variables del tumor.
-- 🟢 Ejemplo Benigno y 🔴 Ejemplo Maligno precargados para probar rápidamente.
-- 📊 Resultados visuales con gauge de confianza, curva ROC y matriz de confusión.
+Carga enfocada en un tramo etario especifico:
 
-> 🌙 Modo oscuro opcional para una experiencia más atractiva.
-
----
-
-## 🐳 Ejecución con Docker
-Para levantar tanto la **API** como el **Frontend** en contenedores, simplemente ejecuta:
 ```bash
-docker-compose up --build
+.\mlops-env\Scripts\python.exe scripts\seed_demo_patients.py --patients 20 --evaluations 3 --start-year 2020 --end-year 2026 --min-age 18 --max-age 29
 ```
-Accede a los servicios en tu navegador:
-- API → http://localhost:5000
-- Frontend → http://localhost:8501
 
-> 📌 Esto asegura que el sistema funcione de forma consistente sin importar el entorno.
+### 4. Levantar la API
 
+```bash
+python api/api.py
+```
 
----
+API disponible en:
 
-### ⚙️ CI/CD con GitHub Actions
-Este proyecto incluye un flujo de **integración continua (CI)** definido en  
-`.github/workflows/deploy.yml`.
+- `http://127.0.0.1:5000`
 
-Cada vez que haces *push* o *pull request* hacia `main`, se ejecuta automáticamente:
+### 5. Levantar el frontend
 
-1. 📥 **Checkout del repositorio**  
-2. 🐍 **Configuración del entorno Python**  
-3. 📦 **Instalación de dependencias**  
-4. 🧠 **Entrenamiento del modelo (`train_model.py`)**  
-5. 🚀 **Ejecución de la API en background**  
-6. 🧪 **Pruebas automáticas con Pytest**
+```bash
+streamlit run frontend/app.py
+```
 
-✅ Esto garantiza que el código esté siempre probado y listo para usarse.  
+Frontend disponible en:
 
---- 
+- `http://127.0.0.1:8501`
 
-## ✍️ Autoría  
+## Dashboard en Power BI
 
-📌 Este proyecto corresponde a la **Evaluación Modular** del programa **Talento Digital – Kibernum**.  
+El archivo del dashboard se encuentra en:
 
-- 👤 **Autor:** Fredy Geraldo Rivera  
+- [breast_cancer_dashboard.pbix](C:\Users\fredy\Desktop\Talento Digital\Modulo 10\Evaluacion Modular\breast-cancer-mlops\powerbi\breast_cancer_dashboard.pbix)
+
+Para conectarlo a la base SQLite:
+
+1. Instalar un driver ODBC para SQLite.
+2. Crear un DSN apuntando a:
+   - [breast_cancer_clinical.db](C:\Users\fredy\Desktop\Talento Digital\Modulo 10\Evaluacion Modular\breast-cancer-mlops\database\breast_cancer_clinical.db)
+3. Abrir el `.pbix`.
+4. Actualizar el modelo desde Power BI.
+
+Esto permite que el dashboard lea directamente los registros almacenados por la app y por los scripts de carga sintetica.
+
+## Endpoints principales
+
+- `GET /health`
+- `GET /model/info`
+- `GET /examples`
+- `POST /predict`
+- `POST /predict-and-save`
+- `POST /predict/batch`
+- `POST /login`
+- `GET /patients`
+
+## Pruebas
+
+```bash
+python -m pytest -v tests/
+```
+
+Cobertura actual enfocada en:
+
+- disponibilidad de endpoints
+- validacion de payloads
+- respuesta de prediccion
+- contrato base de la API
+
+## CI
+
+El workflow `.github/workflows/deploy.yml` ejecuta:
+
+1. instalacion de dependencias
+2. entrenamiento del modelo
+3. inicializacion de la base
+4. ejecucion de pruebas automatizadas
+
+## Valor como proyecto de portafolio
+
+Este proyecto busca mostrar capacidad para:
+
+- transformar un modelo supervisado en una solucion utilizable
+- disenar una interfaz de consumo con narrativa de negocio
+- persistir y reutilizar predicciones en una base de datos
+- conectar una capa operativa con una capa analitica
+- organizar un repositorio con foco en reproducibilidad y presentacion profesional
+
+## Limitaciones
+
+- el dataset clinico original es de uso academico y no representa operacion hospitalaria real
+- la autenticacion es demostrativa
+- los registros persistidos en SQLite son simulados para fines de visualizacion y testing
+- no existe validacion clinica ni aprobacion para uso medico
+
+## Proximas mejoras sugeridas
+
+- agregar comparacion formal entre varios modelos
+- incorporar versionado de artefactos y trazabilidad de entrenamiento
+- ampliar pruebas de integracion entre frontend, API y base de datos
+- documentar el EDA en un notebook o reporte separado
+- publicar videos demo del predictor y del dashboard
+
+## Autor
+
+Fredy Geraldo Rivera
+
+Proyecto desarrollado inicialmente como evaluacion modular y luego refactorizado para elevar su calidad tecnica, claridad narrativa y valor de portafolio.
